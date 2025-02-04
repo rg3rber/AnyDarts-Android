@@ -44,13 +44,13 @@ class MainViewModel : ViewModel() {
 }
 
 fun uploadPhoto(
-    lastPhoto: Bitmap,
+    photo: Bitmap,
     viewModel: MainViewModel,
     context: Context,
 ) {
     // Convert Bitmap to byte array
     val outputStream = ByteArrayOutputStream()
-    lastPhoto.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
+    photo.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
     val photoBytes = outputStream.toByteArray()
 
     // Create multipart request body
@@ -113,6 +113,24 @@ fun uploadPhoto(
     })
 }
 
+fun takeAndUploadPhoto(
+    controller: LifecycleCameraController,
+    context: Context,
+    viewModel: MainViewModel
+) {
+    takePhoto(
+        controller = controller,
+        onPhotoTaken = { bitmap -> // This callback is invoked after the photo is taken
+            viewModel.onTakePhoto(bitmap)
+            uploadPhoto(
+                photo = bitmap, // Pass the captured bitmap to upload
+                viewModel = viewModel,
+                context = context
+            )
+        },
+        context = context
+    )
+}
 
 fun takePhoto(
     controller: LifecycleCameraController,

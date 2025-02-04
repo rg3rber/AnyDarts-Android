@@ -3,9 +3,8 @@ package com.rgbcoding.yolodarts
 import androidx.camera.core.CameraSelector
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -13,9 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cameraswitch
 import androidx.compose.material.icons.filled.Photo
-import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.BottomSheetScaffold
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,11 +30,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.rgbcoding.yolodarts.presentation.Crosshair
-import com.rgbcoding.yolodarts.ui.theme.YoloDartsTheme
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,6 +54,7 @@ fun MainScreen(
     val scope = rememberCoroutineScope()
     val scaffoldState = rememberBottomSheetScaffoldState()
     val serverIp by viewModel.serverIp.collectAsState()
+
     BottomSheetScaffold(
         scaffoldState = scaffoldState,
         sheetPeekHeight = 0.dp,
@@ -78,6 +75,7 @@ fun MainScreen(
                 controller = controller,
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(16.dp)
             )
             Crosshair(modifier = Modifier.fillMaxSize())
             IconButton(
@@ -95,7 +93,33 @@ fun MainScreen(
                     contentDescription = "Switch camera"
                 )
             }
-            // TODO: fix this shit
+            BoxWithConstraints(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                val screenHeight = maxHeight
+                val verticalOffset = screenHeight * 0.25f
+                Button(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .offset(y = -verticalOffset),
+                    onClick = {
+                        takeAndUploadPhoto(
+                            controller = controller,
+                            context = context,
+                            viewModel = viewModel
+                        )
+                    },
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Text(
+                        "Get Score",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
             TextField(
                 value = serverIp,
                 onValueChange = viewModel::setIp,
@@ -112,64 +136,32 @@ fun MainScreen(
                     unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
-            Row(
+            IconButton(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
+                    .align(Alignment.BottomStart)
                     .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceAround
+                onClick = {
+                    scope.launch {
+                        scaffoldState.bottomSheetState.expand()
+                    }
+                }
             ) {
-                IconButton(
-                    onClick = {
-                        scope.launch {
-                            scaffoldState.bottomSheetState.expand()
-                        }
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Photo,
-                        contentDescription = "Open gallery"
-                    )
-                }
-                IconButton(
-                    onClick = {
-                        takePhoto(
-                            controller = controller,
-                            onPhotoTaken = viewModel::onTakePhoto,
-                            context = context
-                        )
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PhotoCamera,
-                        contentDescription = "Take photo"
-                    )
-                }
-                IconButton(
-                    onClick = {
-                        uploadPhoto(
-                            lastPhoto = bitmaps.last(),
-                            viewModel = viewModel,
-                            context = context
-                        )
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Upload,
-                        contentDescription = "Upload photo"
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.Photo,
+                    contentDescription = "Open gallery"
+                )
             }
         }
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-private fun previewMain() {
-    YoloDartsTheme {
-        MainScreen()
-    }
-}
+
+//@Preview(showBackground = true)
+//@Composable
+//private fun previewMain() {
+//    YoloDartsTheme {
+//        MainScreen()
+//    }
+//}
 
 
