@@ -3,20 +3,13 @@ package com.rgbcoding.yolodarts
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.camera.view.CameraController
-import androidx.camera.view.LifecycleCameraController
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.rgbcoding.yolodarts.ui.theme.YoloDartsTheme
 
 class MainActivity : ComponentActivity() {
@@ -41,36 +34,11 @@ class MainActivity : ComponentActivity() {
         }
         enableEdgeToEdge()
 
-
         setContent {
             YoloDartsTheme {
-                MainScreen()
+                MainScreen(modifier = Modifier.fillMaxSize())
             }
         }
-    }
-
-    @Composable
-    fun MainScreen() {
-        val viewModel: MainViewModel = viewModel()
-        val controller = remember {
-            LifecycleCameraController(applicationContext).apply {
-                setEnabledUseCases(
-                    CameraController.IMAGE_CAPTURE or
-                            CameraController.VIDEO_CAPTURE
-                )
-            }
-        }
-
-        MainView(
-            viewModel = viewModel,
-            controller = controller,
-            context = applicationContext,
-            showToast = { message: String ->
-                Handler(Looper.getMainLooper()).post {
-                    Toast.makeText(applicationContext, message, Toast.LENGTH_SHORT).show()
-                }
-            }
-        )
     }
 
     private fun hasRequiredPermissions(): Boolean {
@@ -80,13 +48,5 @@ class MainActivity : ComponentActivity() {
                 it
             ) == PackageManager.PERMISSION_GRANTED
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun MainPreview() {
-    YoloDartsTheme {
-        //MainView( mainViewModel = MainViewModel, controller)
     }
 }

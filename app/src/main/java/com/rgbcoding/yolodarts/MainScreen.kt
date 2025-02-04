@@ -1,7 +1,7 @@
 package com.rgbcoding.yolodarts
 
-import android.content.Context
 import androidx.camera.core.CameraSelector
+import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,21 +27,33 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.rgbcoding.yolodarts.presentation.Crosshair
+import com.rgbcoding.yolodarts.ui.theme.YoloDartsTheme
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainView(
-    viewModel: MainViewModel,
-    controller: LifecycleCameraController,
-    context: Context,
-    showToast: (String) -> Unit
+fun MainScreen(
+    modifier: Modifier = Modifier,
+    viewModel: MainViewModel = viewModel()
 ) {
-
+    val context = LocalContext.current
+    val controller = remember {
+        LifecycleCameraController(context).apply {
+            setEnabledUseCases(
+                CameraController.IMAGE_CAPTURE or
+                        CameraController.VIDEO_CAPTURE
+            )
+        }
+    }
     val bitmaps by viewModel.bitmaps.collectAsState()
     val scope = rememberCoroutineScope()
     val scaffoldState = rememberBottomSheetScaffoldState()
@@ -67,6 +79,7 @@ fun MainView(
                 modifier = Modifier
                     .fillMaxSize()
             )
+            Crosshair(modifier = Modifier.fillMaxSize())
             IconButton(
                 onClick = {
                     controller.cameraSelector =
@@ -86,20 +99,19 @@ fun MainView(
             TextField(
                 value = serverIp,
                 onValueChange = viewModel::setIp,
-                label = { Text("Enter server IP:") },
+                label = { Text("Enter server IP:", color = MaterialTheme.colorScheme.primary) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .align(Alignment.BottomCenter)
-                    .offset(0.dp, 64.dp)
+                    .offset(0.dp, (-64).dp)
                     .padding(16.dp),
                 colors = TextFieldDefaults.textFieldColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
                     cursorColor = MaterialTheme.colorScheme.primary,
                     focusedIndicatorColor = MaterialTheme.colorScheme.primary,
                     unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -137,8 +149,8 @@ fun MainView(
                     onClick = {
                         uploadPhoto(
                             lastPhoto = bitmaps.last(),
-                            showToast = showToast,
-                            viewModel = viewModel
+                            viewModel = viewModel,
+                            context = context
                         )
                     }
                 ) {
@@ -149,6 +161,14 @@ fun MainView(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun previewMain() {
+    YoloDartsTheme {
+        MainScreen()
     }
 }
 

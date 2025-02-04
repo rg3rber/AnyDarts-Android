@@ -46,7 +46,7 @@ class MainViewModel : ViewModel() {
 fun uploadPhoto(
     lastPhoto: Bitmap,
     viewModel: MainViewModel,
-    showToast: (String) -> Unit
+    context: Context,
 ) {
     // Convert Bitmap to byte array
     val outputStream = ByteArrayOutputStream()
@@ -80,6 +80,7 @@ fun uploadPhoto(
     client.newCall(request).enqueue(object : Callback {
         override fun onFailure(call: Call, e: IOException) {
             showToast(
+                context,
                 "Upload failed: ${e.localizedMessage}"
             )
             Log.e("PhotoUpload", "Error uploading photo", e)
@@ -91,15 +92,20 @@ fun uploadPhoto(
                 try {
                     val score = responseBody.toIntOrNull() ?: -1
                     showToast(
+                        context,
                         "Upload successful! Score: $score"
                     )
                 } catch (e: Exception) {
                     showToast(
+                        context,
                         "Error processing score",
                     )
                 }
             } else {
-                showToast("Connection works but upload failed: Code ${response.code}")
+                showToast(
+                    context,
+                    "Connection works but upload failed: Code ${response.code}"
+                )
                 Log.e("PhotoUpload", "Error: ${response.code} - $responseBody")
             }
         }
