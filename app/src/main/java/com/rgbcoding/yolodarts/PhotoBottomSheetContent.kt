@@ -20,10 +20,10 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun PhotoBottomSheetContent(
-    bitmaps: List<Bitmap>,
+    lastPhotos: List<Bitmap>,
     modifier: Modifier = Modifier
 ) {
-    if (bitmaps.isEmpty()) {
+    if (lastPhotos.isEmpty()) {
         Box(
             modifier = modifier
                 .padding(16.dp),
@@ -39,7 +39,7 @@ fun PhotoBottomSheetContent(
             contentPadding = PaddingValues(16.dp),
             modifier = modifier
         ) {
-            items(bitmaps) { bitmap ->
+            items(lastPhotos) { bitmap ->
                 Image(
                     bitmap = bitmap.asImageBitmap(),
                     contentDescription = null,
