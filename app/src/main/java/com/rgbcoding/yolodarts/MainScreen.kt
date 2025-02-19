@@ -46,7 +46,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.rgbcoding.yolodarts.domain.UploadState
 import com.rgbcoding.yolodarts.presentation.Crosshair
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,21 +74,17 @@ fun MainScreen(
                 text = "Camera Preview", style = MaterialTheme.typography.titleMedium
             )
         }, colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            titleContentColor = MaterialTheme.colorScheme.onPrimary
+            containerColor = MaterialTheme.colorScheme.background,
+            titleContentColor = MaterialTheme.colorScheme.onBackground
         ), actions = {
             // Optional: Add action icons here
             IconButton(onClick = {
                 showPhotos = !showPhotos
-                // Handle gallery open
-                scope.launch {
-
-                }
             }) {
                 Icon(
                     imageVector = Icons.Default.PhotoLibrary,
                     contentDescription = "Open Gallery",
-                    tint = MaterialTheme.colorScheme.onPrimary
+                    tint = MaterialTheme.colorScheme.onBackground
                 )
             }
         })
