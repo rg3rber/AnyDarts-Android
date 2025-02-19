@@ -7,6 +7,6 @@ import android.widget.Toast
 
 fun showToast(context: Context, message: String) {
     Handler(Looper.getMainLooper()).post {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
     }
 }

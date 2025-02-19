@@ -13,10 +13,13 @@ fun CameraPreview(
 ) {
     val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     AndroidView(
-        factory = {
-            PreviewView(it).apply {
+        factory = { context ->
+            PreviewView(context).apply {
                 this.controller = controller
                 controller.bindToLifecycle(lifecycleOwner)
+                // Set to PERFORMANCE mode to avoid scaling
+                implementationMode = PreviewView.ImplementationMode.PERFORMANCE
+                scaleType = PreviewView.ScaleType.FILL_CENTER
             }
         },
         //if you need to update in this preview view: update =
