@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 sealed class UploadState {
     object Idle : UploadState()
     data class Uploading(val progress: Int = 0) : UploadState()
-    data class Success(val score: String) : UploadState()
+    data class Success(val score: Int) : UploadState()
     data class Error(val message: String) : UploadState()
 }
 
@@ -30,6 +30,16 @@ class UploadManager(
 
     private val _uploadState = MutableStateFlow<UploadState>(UploadState.Idle)
     val uploadState: StateFlow<UploadState> = _uploadState
+
+    private val scoreListeners = mutableListOf<(Int) -> Unit>()
+
+    fun addScoreListener(listener: (Int) -> Unit) {
+        scoreListeners.add(listener)
+    }
+
+    fun removeScoreListener(listener: (Int) -> Unit) {
+        scoreListeners.remove(listener)
+    }
 
     fun enqueueUpload(request: Request) {
         uploadQueue.offer(request)
@@ -54,7 +64,8 @@ class UploadManager(
                         if (response.isSuccessful && responseBody != null) {
                             try {
                                 val score = responseBody.toIntOrNull() ?: -1
-                                _uploadState.value = UploadState.Success(score.toString())
+                                _uploadState.value = UploadState.Success(score)
+                                scoreListeners.forEach { it(score) }
                             } catch (e: Exception) {
                                 _uploadState.value = UploadState.Error("Error processing score")
                             }

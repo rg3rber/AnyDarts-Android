@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
@@ -25,6 +26,8 @@ import java.io.ByteArrayOutputStream
 import java.util.concurrent.TimeUnit
 
 class MainViewModel : ViewModel() {
+
+    // attributes
 
     private val client = OkHttpClient.Builder()
         .hostnameVerifier { _, _ -> true }
@@ -41,19 +44,67 @@ class MainViewModel : ViewModel() {
     private val _serverIp = MutableStateFlow("192.168.178.111")
     val serverIp: StateFlow<String> = _serverIp.asStateFlow()
 
-    private val _lastScores = MutableStateFlow<List<String>>(emptyList())
-    val lastScore = _lastScores.asStateFlow()
+    private val _lastScores = MutableStateFlow<List<Int>>(emptyList())
+    val lastScores = _lastScores.asStateFlow()
 
     private val _currentPhoto = MutableStateFlow<Bitmap?>(null)
     val currentPhoto: StateFlow<Bitmap?> = _currentPhoto
+
+    private var pendingScoreOverride = ""
+
+    // lifecycle functions
+
+    init {
+        // Register score listener
+        uploadManager.addScoreListener { newScore ->
+            viewModelScope.launch {
+                _lastScores.update { currentScores ->
+                    (currentScores + newScore)
+                }
+            }
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        // Clean up listener when ViewModel is cleared
+        uploadManager.removeScoreListener { newScore ->
+            viewModelScope.launch {
+                _lastScores.update { currentScores ->
+                    (currentScores + newScore).takeLast(10)
+                }
+            }
+        }
+    }
+
+    // functions
 
     fun setIp(ip: String) {
         _serverIp.value = ip
     }
 
-    fun setScore(score: String) {
-        _lastScores.value += score
+    fun overrideScore(newScore: String) {
+        pendingScoreOverride = newScore
     }
+
+    fun submitScoreOverride() {
+        val scoreValue = pendingScoreOverride.toIntOrNull()
+        if (scoreValue != null) {
+            viewModelScope.launch {
+                _lastScores.update { scores ->
+                    if (scores.isEmpty()) listOf(scoreValue)
+                    else {
+                        scores.toMutableList().apply {
+                            this[lastIndex] = scoreValue
+                        }
+                    }
+                }
+            }
+        }
+        pendingScoreOverride = ""
+    }
+
+    // Photo Management
 
     fun onTakePhoto(bitmap: Bitmap) {
         _lastPhotos.update { currentPhotos ->
@@ -136,6 +187,7 @@ fun takePhoto(
                 image.close() //close image
                 //Toast.makeText(context, "Took a photo!", Toast.LENGTH_SHORT).show()
             }
+
             override fun onError(exception: ImageCaptureException) {
                 super.onError(exception)
                 Log.e("Camera", "🚨Couldn't take photo ", exception)

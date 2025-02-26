@@ -31,13 +31,11 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,7 +43,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.rgbcoding.yolodarts.domain.UploadState
+import com.rgbcoding.yolodarts.presentation.BoardSquare
 import com.rgbcoding.yolodarts.presentation.Crosshair
+import com.rgbcoding.yolodarts.presentation.ScoreTextField
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,11 +61,8 @@ fun MainScreen(
         }
     }
     val lastPhotos by viewModel.lastPhotos.collectAsState()
-    val scope = rememberCoroutineScope()
-    val scaffoldState = rememberBottomSheetScaffoldState() // TODO remove?
     var showPhotos by remember { mutableStateOf(false) }
     val serverIp by viewModel.serverIp.collectAsState()
-    val lastScore by viewModel.lastScore.collectAsState()
     val uploadState by viewModel.uploadState.collectAsState()
 
     Scaffold(topBar = {
@@ -112,6 +109,12 @@ fun MainScreen(
                             .fillMaxSize()
                             .padding(top = 0.dp, bottom = 0.dp, start = 16.dp, end = 16.dp)
                     )
+                    BoardSquare(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.Center)
+                    )
+
                     when (uploadState) {
                         is UploadState.Uploading -> {
                             Box(
@@ -130,7 +133,6 @@ fun MainScreen(
                                 )
                             }
                         }
-
                         is UploadState.Success -> {
                             Box(
                                 modifier = Modifier
@@ -147,7 +149,6 @@ fun MainScreen(
                                 )
                             }
                         }
-
                         is UploadState.Error -> {
                             Box(modifier = Modifier.fillMaxWidth()) {
                                 Text(
@@ -160,7 +161,6 @@ fun MainScreen(
                                 )
                             }
                         }
-
                         is UploadState.Idle -> {
                             Crosshair(
                                 modifier = Modifier
@@ -207,28 +207,15 @@ fun MainScreen(
                             color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                     }
-                    TextField(
-                        value = if (lastScore.isEmpty()) "-1" else lastScore.last().toString(),
-                        onValueChange = viewModel::setScore,
-                        label = {
-                            Text(
-                                "Last score:",
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        },
-                        modifier = Modifier
+                    ScoreTextField(
+                        viewModel, modifier = Modifier
                             .fillMaxWidth(0.5f)
                             .align(Alignment.Center)
-                            .padding(16.dp),
-                        colors = TextFieldDefaults.textFieldColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            cursorColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            focusedIndicatorColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
+                            .padding(16.dp)
                     )
                     TextField(
                         value = serverIp,
+                        singleLine = true,
                         onValueChange = viewModel::setIp,
                         label = {
                             Text(
