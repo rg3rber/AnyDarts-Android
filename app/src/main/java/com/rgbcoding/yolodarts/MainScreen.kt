@@ -1,6 +1,5 @@
 package com.rgbcoding.yolodarts
 
-import android.widget.Toast
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
 import androidx.compose.animation.AnimatedVisibility
@@ -12,14 +11,14 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults.buttonColors
+import androidx.compose.material.icons.filled.AirplanemodeActive
+import androidx.compose.material.icons.filled.AirplanemodeInactive
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.WifiPassword
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,8 +27,6 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -41,11 +38,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.rgbcoding.yolodarts.domain.DrawerBody
 import com.rgbcoding.yolodarts.domain.DrawerHeader
 import com.rgbcoding.yolodarts.domain.MenuItem
+import com.rgbcoding.yolodarts.domain.MenuItemType
 import com.rgbcoding.yolodarts.domain.UploadState
 import com.rgbcoding.yolodarts.domain.YoloDartsTitleBar
 import com.rgbcoding.yolodarts.presentation.BoardSquare
@@ -69,9 +69,11 @@ fun MainScreen(
     val lastPhotos by viewModel.lastPhotos.collectAsState()
     var showPhotos by remember { mutableStateOf(false) }
     val serverIp by viewModel.serverIp.collectAsState()
+    val playerCount by viewModel.playerCount.collectAsState()
     val uploadState by viewModel.uploadState.collectAsState()
+    val isAutoScoringMode by viewModel.autoScoringMode.collectAsState()
 
-    // simple navigation drawer
+    // navigation drawer as a simple Settings Menu
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     ModalNavigationDrawer(
@@ -82,25 +84,35 @@ fun MainScreen(
                 DrawerBody(
                     items = listOf(
                         MenuItem(
-                            id = "home",
-                            title = "Home",
-                            contentDescription = "Go to home screen",
-                            icon = Icons.Default.Home
+                            id = "ip",
+                            value = serverIp,
+                            text = "IP Address",
+                            onValueChange = viewModel::setIp,
+                            contentDescription = "Set IP Address",
+                            icon = Icons.Default.WifiPassword
                         ),
                         MenuItem(
-                            id = "settings",
-                            title = "Settings",
-                            contentDescription = "Go to settings screen",
-                            icon = Icons.Default.Settings
+                            id = "players",
+                            value = playerCount,
+                            text = "Number of Players",
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done
+                            ),
+                            onValueChange = viewModel::updatePlayers,
+                            contentDescription = "Set Player Count",
+                            icon = Icons.Default.PersonAdd
+                        ),
+                        MenuItem(
+                            type = MenuItemType.BUTTON,
+                            id = "scoring mode",
+                            value = "ai",
+                            buttonAction = viewModel::toggleAutoScoring,
+                            text = if (isAutoScoringMode) "Disable AI Scoring" else "Enable AI Scoring",
+                            contentDescription = "Toggle AI Scoring Mode",
+                            icon = if (isAutoScoringMode) Icons.Default.AirplanemodeActive else Icons.Default.AirplanemodeInactive
                         ),
                     ),
-                    onItemClick = {
-                        Toast.makeText(
-                            context,
-                            "Clicked on ${it.title}",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
                 )
             }
         },
@@ -192,7 +204,11 @@ fun MainScreen(
                             }
 
                             is UploadState.Error -> {
-                                Box(modifier = Modifier.fillMaxWidth()) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .align(Alignment.TopCenter)
+                                ) {
                                     Text(
                                         "Error: ${(uploadState as UploadState.Error).message}",
                                         modifier = Modifier
@@ -202,6 +218,11 @@ fun MainScreen(
                                         color = MaterialTheme.colorScheme.error
                                     )
                                 }
+                                Crosshair(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .align(Alignment.Center)
+                                )
                             }
 
                             is UploadState.Idle -> {
@@ -220,63 +241,16 @@ fun MainScreen(
                             .background(MaterialTheme.colorScheme.primaryContainer)
                     ) {
                         val screenHeight = maxHeight
-                        val verticalOffset = screenHeight * 0.25f
-                        Button(
-                            modifier = Modifier
-                                .align(Alignment.Center)
-                                .offset(0.dp, -verticalOffset),
-                            onClick = {
-                                if (uploadState is UploadState.Idle) {
-                                    takeAndUploadPhoto(
-                                        controller = controller,
-                                        context = context,
-                                        viewModel = viewModel
-                                    )
-                                } else {
-                                    Toast.makeText(
-                                        context,
-                                        "Waiting for previous upload to finish",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                }
-                            },
-                            colors = buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer
-                            )
-                        ) {
-                            Text(
-                                "Get Score",
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        }
+
                         ScoreTextField(
-                            viewModel, modifier = Modifier
-                                .fillMaxWidth(0.5f)
-                                .align(Alignment.Center)
-                                .padding(16.dp)
-                        )
-                        TextField(
-                            value = serverIp,
-                            singleLine = true,
-                            onValueChange = viewModel::setIp,
-                            label = {
-                                Text(
-                                    "Enter server IP:",
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                                )
-                            },
+                            viewModel,
+                            isAutoScoringMode,
+                            uploadState,
+                            controller,
+                            context,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .align(Alignment.BottomCenter)
-                                .offset(0.dp, (-64).dp)
-                                .padding(16.dp),
-                            colors = TextFieldDefaults.textFieldColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                cursorColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                focusedIndicatorColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
+                                .padding(16.dp)
                         )
                         this@Column.AnimatedVisibility(
                             visible = showPhotos,

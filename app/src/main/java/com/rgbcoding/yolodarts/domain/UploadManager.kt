@@ -1,5 +1,6 @@
 package com.rgbcoding.yolodarts.domain
 
+import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +34,10 @@ class UploadManager(
 
     private val scoreListeners = mutableListOf<(Int) -> Unit>()
 
+    fun setUploadState(newState: UploadState) {
+        _uploadState.value = newState
+    }
+
     fun addScoreListener(listener: (Int) -> Unit) {
         scoreListeners.add(listener)
     }
@@ -47,6 +52,7 @@ class UploadManager(
     }
 
     private fun processQueue() {
+        Log.d("uploadPhoto", "processing Queue of size: ${uploadQueue.size}")
         coroutineScope.launch(Dispatchers.IO) {
             mutex.withLock {
                 if (isProcessing) return@withLock
@@ -58,6 +64,7 @@ class UploadManager(
                 _uploadState.value = UploadState.Uploading()
 
                 try {
+                    Log.d("uploadPhoto", "Trying to call request with ip: ${request.url}")
                     client.newCall(request).execute().use { response ->
                         val responseBody = response.body?.string()
 
@@ -76,13 +83,14 @@ class UploadManager(
                         }
                     }
                 } catch (e: IOException) {
+                    Log.e("uploadPhoto", "Caught Error uploading photo: ${e.message}")
                     _uploadState.value = UploadState.Error(e.localizedMessage ?: "Unknown error")
                 }
             }
-
+            // queue is empty
             mutex.withLock {
                 isProcessing = false
-                _uploadState.value = UploadState.Idle
+                if (_uploadState.value !is UploadState.Error) _uploadState.value = UploadState.Idle
             }
         }
     }

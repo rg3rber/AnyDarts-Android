@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rgbcoding.yolodarts.domain.UploadManager
+import com.rgbcoding.yolodarts.domain.UploadState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -44,6 +45,9 @@ class MainViewModel : ViewModel() {
     private val _serverIp = MutableStateFlow("192.168.178.111")
     val serverIp: StateFlow<String> = _serverIp.asStateFlow()
 
+    private val _playerCount = MutableStateFlow("1")
+    val playerCount: StateFlow<String> = _playerCount.asStateFlow()
+
     private val _lastScores = MutableStateFlow<List<Int>>(emptyList())
     val lastScores = _lastScores.asStateFlow()
 
@@ -51,6 +55,9 @@ class MainViewModel : ViewModel() {
     val currentPhoto: StateFlow<Bitmap?> = _currentPhoto
 
     private var pendingScoreOverride = ""
+
+    private var _autoScoringMode = MutableStateFlow<Boolean>(true)
+    val autoScoringMode = _autoScoringMode.asStateFlow()
 
     // lifecycle functions
 
@@ -83,12 +90,22 @@ class MainViewModel : ViewModel() {
         _serverIp.value = ip
     }
 
-    fun overrideScore(newScore: String) {
-        pendingScoreOverride = newScore
+    fun updatePlayers(playerCount: String) {
+        _playerCount.value = playerCount
+    }
+
+    fun toggleAutoScoring() {
+        _autoScoringMode.value = !(_autoScoringMode.value)
+    }
+
+    fun overrideScore(newScore: String): Boolean {
+        val isError = newScore.toIntOrNull() == null || newScore.toInt() < 0
+        if (!isError) pendingScoreOverride = newScore
+        return isError
     }
 
     fun submitScoreOverride() {
-        val scoreValue = pendingScoreOverride.toIntOrNull()
+        val scoreValue = pendingScoreOverride.toIntOrNull() // better safe than sorry
         if (scoreValue != null) {
             viewModelScope.launch {
                 _lastScores.update { scores ->
@@ -102,6 +119,8 @@ class MainViewModel : ViewModel() {
             }
         }
         pendingScoreOverride = ""
+        uploadManager.setUploadState(UploadState.Idle) // after submitting score reset uploadstate
+        // TODO: change players turn here
     }
 
     // Photo Management
@@ -116,6 +135,7 @@ class MainViewModel : ViewModel() {
     fun uploadPhoto(
         photo: Bitmap
     ) {
+        Log.e("uploadPhoto", "uploading image...")
         // Convert Bitmap to byte array
         val outputStream = ByteArrayOutputStream()
         photo.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
