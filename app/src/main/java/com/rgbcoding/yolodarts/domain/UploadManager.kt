@@ -90,7 +90,7 @@ class UploadManager(
             // queue is empty
             mutex.withLock {
                 isProcessing = false
-                if (_uploadState.value !is UploadState.Error) _uploadState.value = UploadState.Idle
+                //TODO handle states correctly. if (_uploadState.value !is UploadState.Error) _uploadState.value = UploadState.Idle
             }
         }
     }

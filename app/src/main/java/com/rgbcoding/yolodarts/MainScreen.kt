@@ -9,6 +9,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -19,6 +21,7 @@ import androidx.compose.material.icons.filled.AirplanemodeActive
 import androidx.compose.material.icons.filled.AirplanemodeInactive
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.WifiPassword
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,6 +40,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -50,6 +54,7 @@ import com.rgbcoding.yolodarts.domain.UploadState
 import com.rgbcoding.yolodarts.domain.YoloDartsTitleBar
 import com.rgbcoding.yolodarts.presentation.BoardSquare
 import com.rgbcoding.yolodarts.presentation.Crosshair
+import com.rgbcoding.yolodarts.presentation.PlayerCard
 import com.rgbcoding.yolodarts.presentation.ScoreTextField
 import kotlinx.coroutines.launch
 
@@ -72,6 +77,9 @@ fun MainScreen(
     val playerCount by viewModel.playerCount.collectAsState()
     val uploadState by viewModel.uploadState.collectAsState()
     val isAutoScoringMode by viewModel.autoScoringMode.collectAsState()
+
+    //game logic
+    val gameState by viewModel.gameState.collectAsState()
 
     // navigation drawer as a simple Settings Menu
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -97,7 +105,7 @@ fun MainScreen(
                             text = "Number of Players",
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Number,
-                                imeAction = ImeAction.Done
+                                imeAction = ImeAction.Done,
                             ),
                             onValueChange = viewModel::updatePlayers,
                             contentDescription = "Set Player Count",
@@ -129,7 +137,8 @@ fun MainScreen(
                     },
                     onGalleryClick = {
                         showPhotos = !showPhotos
-                    }
+                    },
+                    uploadState
                 )
             }
         ) { padding ->
@@ -167,71 +176,82 @@ fun MainScreen(
                                 .align(Alignment.Center)
                         )
 
-                        when (uploadState) {
-                            is UploadState.Uploading -> {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .align(Alignment.Center)
-                                ) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.align(Alignment.Center)
-                                    )
-                                    Text(
-                                        "Uploading...",
+                        gameState?.let {
+
+                            when (uploadState) {
+                                is UploadState.Uploading -> {
+                                    Box(
                                         modifier = Modifier
+                                            .fillMaxWidth()
                                             .align(Alignment.Center)
-                                            .padding(top = 48.dp)
+                                    ) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.align(Alignment.Center)
+                                        )
+                                        Text(
+                                            "Uploading...",
+                                            modifier = Modifier
+                                                .align(Alignment.Center)
+                                                .padding(top = 48.dp)
+                                        )
+                                    }
+                                }
+
+                                is UploadState.Success -> {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .align(Alignment.Center)
+                                    ) {
+                                        Text(
+                                            "Score: ${(uploadState as UploadState.Success).score}",
+                                            modifier = Modifier
+                                                .align(Alignment.Center)
+                                                .padding(16.dp),
+                                            style = MaterialTheme.typography.titleLarge,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+
+                                is UploadState.Error -> {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .align(Alignment.TopCenter)
+                                    ) {
+                                        Text(
+                                            "Error: ${(uploadState as UploadState.Error).message}",
+                                            modifier = Modifier
+                                                .align(Alignment.Center)
+                                                .padding(16.dp),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                    Crosshair(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .align(Alignment.Center)
+                                    )
+                                }
+
+                                is UploadState.Idle -> {
+                                    Crosshair(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .align(Alignment.Center)
                                     )
                                 }
                             }
-
-                            is UploadState.Success -> {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .align(Alignment.Center)
-                                ) {
-                                    Text(
-                                        "Score: ${(uploadState as UploadState.Success).score}",
-                                        modifier = Modifier
-                                            .align(Alignment.Center)
-                                            .padding(16.dp),
-                                        style = MaterialTheme.typography.titleLarge,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            }
-
-                            is UploadState.Error -> {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .align(Alignment.TopCenter)
-                                ) {
-                                    Text(
-                                        "Error: ${(uploadState as UploadState.Error).message}",
-                                        modifier = Modifier
-                                            .align(Alignment.Center)
-                                            .padding(16.dp),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                }
-                                Crosshair(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .align(Alignment.Center)
-                                )
-                            }
-
-                            is UploadState.Idle -> {
-                                Crosshair(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .align(Alignment.Center)
-                                )
-                            }
+                        } ?: Button(
+                            onClick = {
+                                viewModel.startNewGame()
+                            },
+                            Modifier.align(Alignment.Center)
+                        )
+                        {
+                            Text("Start Game")
                         }
                     }
                     BoxWithConstraints(
@@ -241,17 +261,37 @@ fun MainScreen(
                             .background(MaterialTheme.colorScheme.primaryContainer)
                     ) {
                         val screenHeight = maxHeight
+                        Column(
 
-                        ScoreTextField(
-                            viewModel,
-                            isAutoScoringMode,
-                            uploadState,
-                            controller,
-                            context,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp)
-                        )
+                        ) {
+                            ScoreTextField(
+                                viewModel,
+                                isAutoScoringMode,
+                                uploadState,
+                                controller,
+                                context,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                                    .blur(if (gameState == null) 16.dp else 0.dp)
+                            )
+                            Row( // all the players
+                                modifier = Modifier.fillMaxHeight()
+                            ) {
+                                gameState?.let { it ->
+                                    it.players.forEachIndexed { index, player ->
+                                        PlayerCard(
+                                            player = player,
+                                            isItsTurn = index == gameState!!.currentPlayerIndex.value,
+                                            modifier = Modifier.weight(1f / playerCount.toInt())
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+
+
                         this@Column.AnimatedVisibility(
                             visible = showPhotos,
                             enter = slideInVertically(initialOffsetY = { it }),
@@ -278,12 +318,5 @@ fun MainScreen(
     }
 }
 
-//@Preview(showBackground = true)
-//@Composable
-//private fun previewMain() {
-//    YoloDartsTheme {
-//        MainScreen()
-//    }
-//}
 
 

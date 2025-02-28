@@ -11,8 +11,11 @@ import androidx.camera.view.LifecycleCameraController
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.rgbcoding.yolodarts.data.Game
+import com.rgbcoding.yolodarts.data.Player
 import com.rgbcoding.yolodarts.domain.UploadManager
 import com.rgbcoding.yolodarts.domain.UploadState
+import com.rgbcoding.yolodarts.presentation.AlertCode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -59,6 +62,9 @@ class MainViewModel : ViewModel() {
     private var _autoScoringMode = MutableStateFlow<Boolean>(true)
     val autoScoringMode = _autoScoringMode.asStateFlow()
 
+    private val _gameState = MutableStateFlow<Game?>(null)
+    val gameState: StateFlow<Game?> = _gameState.asStateFlow()
+
     // lifecycle functions
 
     init {
@@ -99,28 +105,54 @@ class MainViewModel : ViewModel() {
     }
 
     fun overrideScore(newScore: String): Boolean {
-        val isError = newScore.toIntOrNull() == null || newScore.toInt() < 0
+        val isError = newScore.toIntOrNull() == null || newScore.toInt() < 0 || newScore.toInt() > 180
         if (!isError) pendingScoreOverride = newScore
         return isError
     }
 
-    fun submitScoreOverride() {
-        val scoreValue = pendingScoreOverride.toIntOrNull() // better safe than sorry
-        if (scoreValue != null) {
-            viewModelScope.launch {
-                _lastScores.update { scores ->
-                    if (scores.isEmpty()) listOf(scoreValue)
-                    else {
-                        scores.toMutableList().apply {
-                            this[lastIndex] = scoreValue
-                        }
-                    }
-                }
-            }
+    fun submitScoreOverride(): AlertCode {
+        val scoreValue = pendingScoreOverride.toIntOrNull() ?: return AlertCode.INVALID_SCORE// better safe than sorry
+
+        val currentPlayer = gameState.value!!.currentPlayer
+
+        if (scoreValue > currentPlayer.scoreLeft.value) {
+            return AlertCode.OVERSHOT
         }
+        currentPlayer.throws.value += scoreValue
+        currentPlayer.scoreLeft.value -= scoreValue
+
         pendingScoreOverride = ""
+        Log.d("Scoring", "setting uploadstate to idle")
         uploadManager.setUploadState(UploadState.Idle) // after submitting score reset uploadstate
-        // TODO: change players turn here
+
+        if (currentPlayer.hasWon()) {
+            return AlertCode.GAME_OVER
+        } else {
+            _gameState.value!!.nextTurn()
+            return AlertCode.VALID_SCORE
+        }
+    }
+
+    //game logic:
+
+    fun startNewGame() {
+        val playerNames = generatePlayerNames(playerCount.value.toInt())
+        val players = playerNames.map { name -> Player(name) }
+        _gameState.value = Game(players)
+    }
+
+    private fun generatePlayerNames(playerCount: Int): List<String> {
+        return List(playerCount) { index -> "Player ${index + 1}" }
+    }
+
+    fun goBack() {
+        //TODO: if there are throws logged: 1. set player turn back, 2. drop last throw, 3. reset score left
+        // 4. if possible: put the "dropped" throw into scoretextfield value
+    }
+
+    fun endGame() {
+        // TODO save the game in Room
+        _gameState.value = null
     }
 
     // Photo Management
