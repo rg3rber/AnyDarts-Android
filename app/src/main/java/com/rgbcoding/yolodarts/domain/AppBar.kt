@@ -1,8 +1,9 @@
 package com.rgbcoding.yolodarts.domain
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.PhotoLibrary
@@ -14,36 +15,64 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun YoloDartsTitleBar(
     onNavigationClick: () -> Unit,
-    onGalleryClick: () -> Unit
+    onGalleryClick: () -> Unit,
+    uploadState: UploadState
 ) {
-    TopAppBar(modifier = Modifier.height(80.dp), title = {
-        Text(
-            text = "YoloDarts", style = MaterialTheme.typography.titleMedium
-        )
-    }, colors = TopAppBarDefaults.topAppBarColors(
-        containerColor = MaterialTheme.colorScheme.background,
-        titleContentColor = MaterialTheme.colorScheme.onBackground
-    ), navigationIcon = {
-        IconButton(
-            onClick = {
-                onNavigationClick()
-            }) {
-            Icon(
-                imageVector = Icons.Default.BarChart,
-                contentDescription = "Navigation Drawer",
-                tint = MaterialTheme.colorScheme.onBackground
-            )
-        }
-    },
+    val uploadStateName = when (uploadState) {
+        is UploadState.Success -> "Success"
+        is UploadState.Uploading -> "Uploading"
+        is UploadState.Error -> "Error"
+        is UploadState.Idle -> "Idle"
+    }
+    TopAppBar(
+        modifier = Modifier, title = {
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                Text(
+                    text = "YoloDarts",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = "UploadState: ${uploadStateName}",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = when (uploadState) {
+                        is UploadState.Success -> Color.Green
+                        is UploadState.Uploading -> Color.Yellow
+                        is UploadState.Error -> MaterialTheme.colorScheme.error
+                        is UploadState.Idle -> MaterialTheme.colorScheme.onBackground
+                    }
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background,
+            titleContentColor = MaterialTheme.colorScheme.onBackground
+        ),
+        navigationIcon = {
+            IconButton(
+                onClick = {
+                    onNavigationClick()
+                }) {
+                Icon(
+                    imageVector = Icons.Default.BarChart,
+                    contentDescription = "Navigation Drawer",
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
+        },
         actions = {
             // Optional: Add action icons here
             IconButton(onClick = {
@@ -66,6 +95,6 @@ fun previewTitleBar() {
         modifier = Modifier.fillMaxSize()
     )
     {
-        YoloDartsTitleBar({}, {})
+        YoloDartsTitleBar({}, {}, UploadState.Success(10))
     }
 }

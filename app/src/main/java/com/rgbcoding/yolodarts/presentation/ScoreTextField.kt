@@ -7,8 +7,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Redo
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults.buttonColors
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -20,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -39,11 +45,28 @@ fun ScoreTextField(
     var isError by remember { mutableStateOf(false) }
     var isEditing by remember { mutableStateOf(false) }
     var editingValue by remember { mutableStateOf("") }
-    val lastScore = viewModel.lastScores.collectAsState().value.lastOrNull()?.toString() ?: "-1"
+    val lastScore = viewModel.lastScores.collectAsState().value.lastOrNull()?.toString() ?: ""
+
+    //alerts
+    val openAlertDialog = remember { mutableStateOf(false) }
+    val alertCode = remember { mutableStateOf<AlertCode?>(null) }
+
+    // remove cursor once done
+    val focusManager = LocalFocusManager.current
 
     Row(
         verticalAlignment = Alignment.CenterVertically
     ) {
+        IconButton(
+            onClick = { viewModel.goBack() },
+            modifier = Modifier.weight(0.5f),
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.Redo,
+                contentDescription = "Go Back One Turn",
+                tint = MaterialTheme.colorScheme.onBackground
+            )
+        }
         TextField(
             value = if (isEditing) editingValue else lastScore,
             onValueChange = { newValue ->
@@ -65,8 +88,8 @@ fun ScoreTextField(
             keyboardActions = KeyboardActions(
                 onDone = {
                     if (!isError) {
-                        viewModel.submitScoreOverride()
-                        isEditing = false
+                        //viewModel.submitScoreOverride()
+                        focusManager.clearFocus()
                     }
                 }
             ),
@@ -80,40 +103,64 @@ fun ScoreTextField(
                 .padding(start = 4.dp, top = 16.dp, bottom = 16.dp, end = 16.dp)
                 .weight(1f),
             onClick = {
-                if (currentUploadState is UploadState.Success) {
-                    if (viewModel.overrideScore(currentUploadState.score.toString())) viewModel.submitScoreOverride()
-                    else {
+                if (!isAutoScoringMode) {
+                    alertCode.value = viewModel.submitScoreOverride()
+                    if (alertCode.value != AlertCode.VALID_SCORE) {
+                        openAlertDialog.value = true
+                    }
+                } else {
+                    if (currentUploadState is UploadState.Success) {
+                        //TODO this makes no sense?? if i overrrode the get score my overridden score will be overrriden?
+                        if (viewModel.overrideScore(currentUploadState.score.toString())) {
+                            alertCode.value = viewModel.submitScoreOverride()
+                            if (alertCode.value != AlertCode.VALID_SCORE) {
+                                openAlertDialog.value = true
+                            }
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "Submitted Score of: ${currentUploadState.score} is invalid",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                    if (currentUploadState !is UploadState.Uploading) {
+                        takeAndUploadPhoto(
+                            controller = controller,
+                            context = context,
+                            viewModel = viewModel
+                        )
+                    } else {
                         Toast.makeText(
                             context,
-                            "Submitted Score of: ${currentUploadState.score} is invalid",
-                            Toast.LENGTH_LONG
+                            "Waiting for previous upload to finish",
+                            Toast.LENGTH_SHORT
                         ).show()
                     }
                 }
-                if (currentUploadState !is UploadState.Uploading) {
-                    takeAndUploadPhoto(
-                        controller = controller,
-                        context = context,
-                        viewModel = viewModel
-                    )
-                } else {
-                    Toast.makeText(
-                        context,
-                        "Waiting for previous upload to finish",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+                isEditing = false // after submitting reset editing
             },
             colors = buttonColors(
                 containerColor = MaterialTheme.colorScheme.secondaryContainer
             )
         ) {
             Text(
-                if (isAutoScoringMode || currentUploadState is UploadState.Success) "Submit Score" else "Get Score",
-                style = MaterialTheme.typography.titleLarge,
+                if (!isAutoScoringMode || (isAutoScoringMode && currentUploadState is UploadState.Success)) "Submit Score" else "Get Score",
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
         }
+    }
+
+    if (openAlertDialog.value) {
+        GameAlertDialog(
+            onDismissRequest = { openAlertDialog.value = false },
+            onConfirmation = { openAlertDialog.value = false },
+            dialogTitle = alertCode.toString(),
+            dialogText = "This is an example of an alert dialog with buttons.",
+            icon = Icons.Default.Info,
+            alertCode = alertCode.value
+        )
     }
 }
 
