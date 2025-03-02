@@ -2,6 +2,40 @@ package com.rgbcoding.yolodarts.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+// Primary colors
+val DartboardRed = Color(0xFFE63946)
+val DartboardGreen = Color(0xFF2A9D8F)
+val DartboardBlack = Color(0xFF2B2D42)
+
+// Secondary colors
+val MetallicGold = Color(0xFFFFD700)
+val MetallicSilver = Color(0xFFE5E5E5)
+
+// Background colors
+val BackgroundDark = Color(0xFF1A1C2E)
+val BackgroundLight = Color(0xFFF8F9FA)
+val SurfaceDark = Color(0xFF2D2F45)
+val SurfaceLight = Color(0xFFFFFFFF)
+
+// Accent colors
+val AccentBlue = Color(0xFF457B9D)
+val AccentTeal = Color(0xFF48CAE4)
+
+// Status colors
+val SuccessGreen = Color(0xFF43AA8B)
+val ErrorRed = Color(0xFFFF4D4D)
+val WarningYellow = Color(0xFFFFB703)
+
+// Text colors
+val TextPrimaryDark = Color(0xFFE9ECEF)
+val TextSecondaryDark = Color(0xFFADB5BD)
+val TextPrimaryLight = Color(0xFF2B2D42)
+val TextSecondaryLight = Color(0xFF6C757D)
+
+// Overlay colors
+val ScrimLight = Color(0x99000000)
+val ScrimDark = Color(0xCC000000)
+
 val primaryLight = Color(0xFF006857)
 val onPrimaryLight = Color(0xFFFFFFFF)
 val primaryContainerLight = Color(0xFF00846E)
