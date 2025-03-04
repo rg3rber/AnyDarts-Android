@@ -29,6 +29,8 @@ class UploadManager(
     private val mutex = Mutex()
     private var isProcessing = false
 
+    //TODO add retry logic ie. after getting Uploadstate.Error user can try again or manually set score
+
     private val _uploadState = MutableStateFlow<UploadState>(UploadState.Idle)
     val uploadState: StateFlow<UploadState> = _uploadState
 
@@ -90,7 +92,9 @@ class UploadManager(
             // queue is empty
             mutex.withLock {
                 isProcessing = false
-                //TODO handle states correctly. if (_uploadState.value !is UploadState.Error) _uploadState.value = UploadState.Idle
+                Log.d("UploadManager:", "emptied Queue and uploadState is ${_uploadState.value}")
+                //TODO handle states correctly. for now do nothing => the code above sets the state either to error or success
+                // if (_uploadState.value !is UploadState.Error) _uploadState.value = UploadState.Idle
             }
         }
     }

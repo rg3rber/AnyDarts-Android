@@ -114,7 +114,11 @@ fun ScoreTextField(
                         if (viewModel.overrideScore(currentUploadState.score.toString())) {
                             alertCode.value = viewModel.submitScoreOverride()
                             if (alertCode.value != AlertCode.VALID_SCORE) {
+                                // something with the score went wrong => show dialog
                                 openAlertDialog.value = true
+                                viewModel.setUploadState(UploadState.Idle)
+                            } else {
+                                viewModel.setUploadState(UploadState.Idle)
                             }
                         } else {
                             Toast.makeText(

@@ -104,6 +104,10 @@ class MainViewModel : ViewModel() {
         _autoScoringMode.value = !(_autoScoringMode.value)
     }
 
+    fun setUploadState(newState: UploadState) {
+        uploadManager.setUploadState(newState)
+    }
+
     fun overrideScore(newScore: String): Boolean {
         val isError = newScore.toIntOrNull() == null || newScore.toInt() < 0 || newScore.toInt() > 180
         if (!isError) pendingScoreOverride = newScore
@@ -146,8 +150,23 @@ class MainViewModel : ViewModel() {
     }
 
     fun goBack() {
-        //TODO: if there are throws logged: 1. set player turn back, 2. drop last throw, 3. reset score left
-        // 4. if possible: put the "dropped" throw into scoretextfield value
+
+        if (_gameState.value == null) return // return if no game
+        else {
+            val currentPlayer = _gameState.value!!.currentPlayer
+            val currentPlayerIndex = _gameState.value!!.currentPlayerIndex
+            if (currentPlayer.throws.value.isEmpty() && currentPlayerIndex.value == 0) return // only undo if there is something to undo
+
+            _gameState.value!!.previousTurn() // set player turn back
+
+            val undoneThrow = currentPlayer.throws.value.lastOrNull()
+            undoneThrow?.let {
+                currentPlayer.throws.value = currentPlayer.throws.value.dropLast(1) // drop last throw
+                currentPlayer.scoreLeft.value += it // reset score left
+                setUploadState(UploadState.Success(it)) // put the "dropped" throw into score textfield value
+            } ?: return
+        }
+
     }
 
     fun endGame() {
