@@ -18,7 +18,7 @@ data class Game(
 
     fun previousTurn() {
         if (players.size > 1) {
-            currentPlayerIndex.value = (currentPlayerIndex.value - 1) % players.size
+            currentPlayerIndex.value = (currentPlayerIndex.value - 1 + players.size) % players.size
         }
     }
 
