@@ -1,9 +1,11 @@
 package com.rgbcoding.yolodarts.domain
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.PhotoLibrary
@@ -18,7 +20,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.rgbcoding.yolodarts.R
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,9 +46,10 @@ fun YoloDartsTitleBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                Text(
-                    text = "YoloDarts",
-                    style = MaterialTheme.typography.titleMedium
+                Image(
+                    painter = painterResource(id = R.drawable.title_simple),
+                    contentDescription = "Title Image",
+                    modifier = Modifier.size(180.dp)
                 )
                 Text(
                     text = "UploadState: ${uploadStateName}",
@@ -90,7 +96,7 @@ fun YoloDartsTitleBar(
 
 @Preview
 @Composable
-fun previewTitleBar() {
+fun PreviewTitleBar() {
     Box(
         modifier = Modifier.fillMaxSize()
     )
