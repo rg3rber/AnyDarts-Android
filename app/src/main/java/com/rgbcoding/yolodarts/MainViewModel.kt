@@ -15,6 +15,7 @@ import com.rgbcoding.yolodarts.data.Game
 import com.rgbcoding.yolodarts.data.Player
 import com.rgbcoding.yolodarts.domain.UploadManager
 import com.rgbcoding.yolodarts.domain.UploadState
+import com.rgbcoding.yolodarts.domain.toReadableString
 import com.rgbcoding.yolodarts.presentation.AlertCode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -51,8 +52,8 @@ class MainViewModel : ViewModel() {
     private val _playerCount = MutableStateFlow("1")
     val playerCount: StateFlow<String> = _playerCount.asStateFlow()
 
-    private val _lastScores = MutableStateFlow<List<Int>>(emptyList())
-    val lastScores = _lastScores.asStateFlow()
+    private val _lastScore = MutableStateFlow<Int?>(null)
+    val lastScore = _lastScore.asStateFlow()
 
     private val _currentPhoto = MutableStateFlow<Bitmap?>(null)
     val currentPhoto: StateFlow<Bitmap?> = _currentPhoto
@@ -71,8 +72,8 @@ class MainViewModel : ViewModel() {
         // Register score listener
         uploadManager.addScoreListener { newScore ->
             viewModelScope.launch {
-                _lastScores.update { currentScores ->
-                    (currentScores + newScore)
+                _lastScore.update {
+                    newScore
                 }
             }
         }
@@ -83,8 +84,8 @@ class MainViewModel : ViewModel() {
         // Clean up listener when ViewModel is cleared
         uploadManager.removeScoreListener { newScore ->
             viewModelScope.launch {
-                _lastScores.update { currentScores ->
-                    (currentScores + newScore).takeLast(10)
+                _lastScore.update {
+                    newScore
                 }
             }
         }
@@ -105,12 +106,19 @@ class MainViewModel : ViewModel() {
     }
 
     fun setUploadState(newState: UploadState) {
+        Log.d("Scoring", "ViewModel is trying to setuploadstate to $newState")
         uploadManager.setUploadState(newState)
     }
 
+
     fun overrideScore(newScore: String): Boolean {
+        Log.d("Scoring", "trying to override score with: $newScore")
         val isError = newScore.toIntOrNull() == null || newScore.toInt() < 0 || newScore.toInt() > 180
-        if (!isError) pendingScoreOverride = newScore
+        Log.d("Scoring", "newScore lead to isError = $isError")
+        if (!isError) {
+            pendingScoreOverride = newScore
+            _lastScore.value = newScore.toInt() // save the overriden score to lastScore
+        }
         return isError
     }
 
@@ -126,8 +134,9 @@ class MainViewModel : ViewModel() {
         currentPlayer.scoreLeft.value -= scoreValue
 
         pendingScoreOverride = ""
-        Log.d("Scoring", "setting uploadstate to idle")
+        Log.d("Scoring", "Viewmodel: SubmitScore is setting uploadstate to idle")
         uploadManager.setUploadState(UploadState.Idle) // after submitting score reset uploadstate
+        _lastScore.value = null // TODO also reset lastscore because it is actually the total score
 
         if (currentPlayer.hasWon()) {
             return AlertCode.GAME_OVER
@@ -163,7 +172,7 @@ class MainViewModel : ViewModel() {
             undoneThrow?.let {
                 currentPlayer.throws.value = currentPlayer.throws.value.dropLast(1) // drop last throw
                 currentPlayer.scoreLeft.value += it // reset score left
-                setUploadState(UploadState.Success(it)) // put the "dropped" throw into score textfield value
+                _lastScore.value = undoneThrow // put the "dropped" throw into score textfield value
             } ?: return
         }
 
@@ -209,6 +218,16 @@ class MainViewModel : ViewModel() {
             .build()
 
         uploadManager.enqueueUpload(request)
+    }
+
+    fun dummyGetScore(
+        viewModel: MainViewModel,
+        uploadState: UploadState,
+        returnScore: Int?
+    ) {
+        Log.d("Scoring", "dummyGetScore is setting uploadstate from ${viewModel.uploadState.value.toReadableString()} to ${uploadState.toReadableString()}")
+        viewModel.setUploadState(uploadState)
+        viewModel._lastScore.value = returnScore
     }
 }
 

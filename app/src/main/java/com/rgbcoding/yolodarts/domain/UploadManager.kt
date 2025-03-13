@@ -21,6 +21,15 @@ sealed class UploadState {
     data class Error(val message: String) : UploadState()
 }
 
+fun UploadState.toReadableString(): String {
+    return when (this) {
+        is UploadState.Success -> "Success (Score: $score)"
+        is UploadState.Uploading -> "Uploading (${progress}%)"
+        is UploadState.Error -> "Error: $message"
+        is UploadState.Idle -> "Idle"
+    }
+}
+
 class UploadManager(
     private val client: OkHttpClient,
     private val coroutineScope: CoroutineScope
@@ -37,6 +46,7 @@ class UploadManager(
     private val scoreListeners = mutableListOf<(Int) -> Unit>()
 
     fun setUploadState(newState: UploadState) {
+        Log.d("Scoring", "UploadManager is setting uploadState from ${uploadState.value.toReadableString()} to $newState")
         _uploadState.value = newState
     }
 

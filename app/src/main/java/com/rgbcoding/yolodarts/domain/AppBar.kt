@@ -1,7 +1,6 @@
 package com.rgbcoding.yolodarts.domain
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,11 +8,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -29,37 +28,21 @@ import com.rgbcoding.yolodarts.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun YoloDartsTitleBar(
+    displayUploadState: () -> Unit,
     onNavigationClick: () -> Unit,
     onGalleryClick: () -> Unit,
     uploadState: UploadState
 ) {
-    val uploadStateName = when (uploadState) {
-        is UploadState.Success -> "Success"
-        is UploadState.Uploading -> "Uploading"
-        is UploadState.Error -> "Error"
-        is UploadState.Idle -> "Idle"
-    }
     TopAppBar(
         modifier = Modifier, title = {
             Row(
                 modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.title_simple),
+                    painter = painterResource(id = R.drawable.yolodartsv2_title),
                     contentDescription = "Title Image",
-                    modifier = Modifier.size(180.dp)
-                )
-                Text(
-                    text = "UploadState: ${uploadStateName}",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = when (uploadState) {
-                        is UploadState.Success -> Color.Green
-                        is UploadState.Uploading -> Color.Yellow
-                        is UploadState.Error -> MaterialTheme.colorScheme.error
-                        is UploadState.Idle -> MaterialTheme.colorScheme.onBackground
-                    }
+                    modifier = Modifier.size(140.dp)
                 )
             }
         },
@@ -80,6 +63,23 @@ fun YoloDartsTitleBar(
             }
         },
         actions = {
+            IconButton(
+                onClick = {
+                    displayUploadState()
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Wifi,
+                    contentDescription = "Upload State Icon",
+                    tint = when (uploadState) {
+                        is UploadState.Success -> Color.Green
+                        is UploadState.Uploading -> Color.Yellow
+                        is UploadState.Error -> MaterialTheme.colorScheme.error
+                        is UploadState.Idle -> MaterialTheme.colorScheme.onBackground
+                    }
+
+                )
+            }
             // Optional: Add action icons here
             IconButton(onClick = {
                 onGalleryClick()
@@ -101,6 +101,6 @@ fun PreviewTitleBar() {
         modifier = Modifier.fillMaxSize()
     )
     {
-        YoloDartsTitleBar({}, {}, UploadState.Success(10))
+        YoloDartsTitleBar({}, {}, {}, UploadState.Success(10))
     }
 }

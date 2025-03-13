@@ -1,18 +1,23 @@
 package com.rgbcoding.yolodarts
 
+import android.widget.Toast
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -41,7 +46,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.paint
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -52,6 +61,7 @@ import com.rgbcoding.yolodarts.domain.MenuItem
 import com.rgbcoding.yolodarts.domain.MenuItemType
 import com.rgbcoding.yolodarts.domain.UploadState
 import com.rgbcoding.yolodarts.domain.YoloDartsTitleBar
+import com.rgbcoding.yolodarts.domain.toReadableString
 import com.rgbcoding.yolodarts.presentation.BoardSquare
 import com.rgbcoding.yolodarts.presentation.Crosshair
 import com.rgbcoding.yolodarts.presentation.PlayerCard
@@ -84,6 +94,18 @@ fun MainScreen(
     // navigation drawer as a simple Settings Menu
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+
+    //keyboard shift logic:
+    val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    val cameraWeight = remember(keyboardVisible) {
+        if (keyboardVisible) 0.0000000001f else 1f
+    }
+    //other option:
+    val cameraWeightAnimated by animateFloatAsState(
+        targetValue = cameraWeight,
+        animationSpec = tween(durationMillis = 300)
+    )
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -128,6 +150,9 @@ fun MainScreen(
         Scaffold(
             topBar = {
                 YoloDartsTitleBar(
+                    displayUploadState = {
+                        Toast.makeText(context, "Current Upload State is ${uploadState.toReadableString()}", Toast.LENGTH_LONG).show()
+                    },
                     onNavigationClick = {
                         scope.launch {
                             drawerState.apply {
@@ -153,144 +178,161 @@ fun MainScreen(
                         .fillMaxSize()
                         .background(MaterialTheme.colorScheme.background)
                 ) {
+                    // Preview Box
+                    Box(
+                        modifier = Modifier
+                            .weight(cameraWeightAnimated)
+                            .fillMaxWidth()
+                            .animateContentSize() // Animate the size change
+                    ) {
+                        if (cameraWeight > 0f) {
+                            CameraPreview(
+                                controller = controller,
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                                    .fillMaxSize()
+                                    .padding(
+                                        top = 0.dp,
+                                        bottom = 0.dp,
+                                        start = 16.dp,
+                                        end = 16.dp
+                                    )
+                            )
+                            BoardSquare(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .align(Alignment.Center)
+                            )
+                            gameState?.let {
+                                when (uploadState) {
+                                    is UploadState.Uploading -> {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .align(Alignment.Center)
+                                        ) {
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.align(Alignment.Center)
+                                            )
+                                            Text(
+                                                "Uploading...",
+                                                modifier = Modifier
+                                                    .align(Alignment.Center)
+                                                    .padding(top = 48.dp)
+                                            )
+                                        }
+                                    }
+
+                                    is UploadState.Success -> {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .align(Alignment.Center)
+                                        ) {
+                                            Text(
+                                                "Score: ${(uploadState as UploadState.Success).score}",
+                                                modifier = Modifier
+                                                    .align(Alignment.Center)
+                                                    .padding(16.dp),
+                                                style = MaterialTheme.typography.titleLarge,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
+
+                                    is UploadState.Error -> {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .align(Alignment.TopCenter)
+                                        ) {
+                                            Text(
+                                                "Error: ${(uploadState as UploadState.Error).message}",
+                                                modifier = Modifier
+                                                    .align(Alignment.Center)
+                                                    .padding(16.dp),
+                                                style = MaterialTheme.typography.titleMedium,
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                        Crosshair(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .align(Alignment.Center)
+                                        )
+                                    }
+
+                                    is UploadState.Idle -> {
+                                        Crosshair(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .align(Alignment.Center)
+                                        )
+                                    }
+                                }
+                            } ?: Button(
+                                onClick = {
+                                    viewModel.startNewGame()
+                                },
+                                Modifier.align(Alignment.Center)
+                            )
+                            {
+                                Text("Start Game")
+                            }
+                        }
+                    }
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth()
+                            .paint(
+                                painterResource(id = R.drawable.yd_bg_square),
+                                contentScale = ContentScale.Crop
+                            )
                     ) {
-                        CameraPreview(
-                            controller = controller,
-                            modifier = Modifier
-                                .align(Alignment.Center)
-                                .fillMaxSize()
-                                .padding(
-                                    top = 0.dp,
-                                    bottom = 0.dp,
-                                    start = 16.dp,
-                                    end = 16.dp
-                                )
-                        )
-                        BoardSquare(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.Center)
-                        )
-
-                        gameState?.let {
-
-                            when (uploadState) {
-                                is UploadState.Uploading -> {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .align(Alignment.Center)
-                                    ) {
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.align(Alignment.Center)
-                                        )
-                                        Text(
-                                            "Uploading...",
-                                            modifier = Modifier
-                                                .align(Alignment.Center)
-                                                .padding(top = 48.dp)
-                                        )
-                                    }
-                                }
-
-                                is UploadState.Success -> {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .align(Alignment.Center)
-                                    ) {
-                                        Text(
-                                            "Score: ${(uploadState as UploadState.Success).score}",
-                                            modifier = Modifier
-                                                .align(Alignment.Center)
-                                                .padding(16.dp),
-                                            style = MaterialTheme.typography.titleLarge,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-                                }
-
-                                is UploadState.Error -> {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .align(Alignment.TopCenter)
-                                    ) {
-                                        Text(
-                                            "Error: ${(uploadState as UploadState.Error).message}",
-                                            modifier = Modifier
-                                                .align(Alignment.Center)
-                                                .padding(16.dp),
-                                            style = MaterialTheme.typography.titleMedium,
-                                            color = MaterialTheme.colorScheme.error
-                                        )
-                                    }
-                                    Crosshair(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .align(Alignment.Center)
-                                    )
-                                }
-
-                                is UploadState.Idle -> {
-                                    Crosshair(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .align(Alignment.Center)
-                                    )
-                                }
-                            }
-                        } ?: Button(
-                            onClick = {
-                                viewModel.startNewGame()
-                            },
-                            Modifier.align(Alignment.Center)
-                        )
-                        {
-                            Text("Start Game")
-                        }
-                    }
-                    BoxWithConstraints(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .background(MaterialTheme.colorScheme.primaryContainer)
-                    ) {
-                        val screenHeight = maxHeight
                         Column(
-
+                            modifier = Modifier.fillMaxSize()
                         ) {
                             ScoreTextField(
                                 viewModel,
                                 isAutoScoringMode,
-                                uploadState,
                                 controller,
                                 context,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(16.dp)
+                                    .padding(start = 16.dp, bottom = 16.dp, end = 16.dp, top = 0.dp)
                                     .blur(if (gameState == null) 16.dp else 0.dp)
                             )
-                            Row( // all the players
-                                modifier = Modifier.fillMaxHeight()
+                            //first player
+                            gameState?.let {
+                                PlayerCard(
+                                    player = it.currentPlayer,
+                                    isItsTurn = true,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .weight(1f)
+                                )
+                            }
+                            Row( // all the other players
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .weight(1f)
                             ) {
                                 gameState?.let { it ->
                                     it.players.forEachIndexed { index, player ->
-                                        PlayerCard(
-                                            player = player,
-                                            isItsTurn = index == gameState!!.currentPlayerIndex.value,
-                                            modifier = Modifier.weight(1f / playerCount.toInt())
-                                        )
+                                        if (index != gameState!!.currentPlayerIndex.value) {
+                                            PlayerCard(
+                                                player = player,
+                                                isItsTurn = false,
+                                                modifier = Modifier
+                                                    .weight(1f / (playerCount.toInt() - 1))
+                                                    .fillMaxHeight()
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
-
-
 
                         this@Column.AnimatedVisibility(
                             visible = showPhotos,
@@ -317,6 +359,3 @@ fun MainScreen(
         }
     }
 }
-
-
-

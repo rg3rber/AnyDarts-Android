@@ -1,6 +1,7 @@
 package com.rgbcoding.yolodarts.presentation
 
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.camera.view.LifecycleCameraController
 import androidx.compose.foundation.layout.Row
@@ -31,13 +32,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.rgbcoding.yolodarts.MainViewModel
 import com.rgbcoding.yolodarts.domain.UploadState
-import com.rgbcoding.yolodarts.takeAndUploadPhoto
+import com.rgbcoding.yolodarts.domain.toReadableString
 
 @Composable
 fun ScoreTextField(
     viewModel: MainViewModel,
     isAutoScoringMode: Boolean,
-    currentUploadState: UploadState,
     controller: LifecycleCameraController,
     context: Context,
     modifier: Modifier = Modifier
@@ -45,7 +45,11 @@ fun ScoreTextField(
     var isError by remember { mutableStateOf(false) }
     var isEditing by remember { mutableStateOf(false) }
     var editingValue by remember { mutableStateOf("") }
-    val lastScore = viewModel.lastScores.collectAsState().value.lastOrNull()?.toString() ?: ""
+    val lastScore = viewModel.lastScore.collectAsState().value ?: ""
+
+    //this does not work: also in general you have too much logic inside Views (composables here the textfield) here you should just observe flows and conditionally
+    // display different things or call different functions then the viewmodel does all the logic part...
+    val currentUploadState by viewModel.uploadState.collectAsState()
 
     //alerts
     val openAlertDialog = remember { mutableStateOf(false) }
@@ -68,7 +72,7 @@ fun ScoreTextField(
             )
         }
         TextField(
-            value = if (isEditing) editingValue else lastScore,
+            value = if (isEditing) editingValue else lastScore.toString(),
             onValueChange = { newValue ->
                 isEditing = true
                 editingValue = newValue
@@ -76,7 +80,7 @@ fun ScoreTextField(
             },
             label = {
                 Text(
-                    "Last score:",
+                    "Total score:",
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
             },
@@ -88,7 +92,7 @@ fun ScoreTextField(
             keyboardActions = KeyboardActions(
                 onDone = {
                     if (!isError) {
-                        //viewModel.submitScoreOverride()
+                        viewModel.submitScoreOverride()
                         focusManager.clearFocus()
                     }
                 }
@@ -96,44 +100,54 @@ fun ScoreTextField(
             isError = isError,
             modifier = Modifier
                 .weight(2f)
-                .padding(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 4.dp)
+                .padding(start = 16.dp, top = 0.dp, bottom = 16.dp, end = 4.dp)
         )
         Button(
             modifier = Modifier
-                .padding(start = 4.dp, top = 16.dp, bottom = 16.dp, end = 16.dp)
+                .padding(start = 4.dp, top = 0.dp, bottom = 16.dp, end = 16.dp)
                 .weight(1f),
             onClick = {
+                Log.d("Scoring", "Clicked on Get/Submit Button")
                 if (!isAutoScoringMode) {
+                    val scoreInScoreField = viewModel.lastScore.value
+                    isError = viewModel.overrideScore(scoreInScoreField.toString())
                     alertCode.value = viewModel.submitScoreOverride()
                     if (alertCode.value != AlertCode.VALID_SCORE) {
                         openAlertDialog.value = true
                     }
                 } else {
-                    if (currentUploadState is UploadState.Success) {
+                    val currentState = viewModel.uploadState.value
+                    if (currentState is UploadState.Success) {
                         //TODO this makes no sense?? if i overrrode the get score my overridden score will be overrriden?
-                        if (viewModel.overrideScore(currentUploadState.score.toString())) {
+                        if (!viewModel.overrideScore(viewModel.lastScore.value.toString())) {
+                            //override did not cause an error
                             alertCode.value = viewModel.submitScoreOverride()
                             if (alertCode.value != AlertCode.VALID_SCORE) {
                                 // something with the score went wrong => show dialog
                                 openAlertDialog.value = true
-                                viewModel.setUploadState(UploadState.Idle)
+                                //viewModel.setUploadState(UploadState.Idle)
                             } else {
-                                viewModel.setUploadState(UploadState.Idle)
+                                // TODO if it worked do nothing?
+                                Log.d(
+                                    "Scoring",
+                                    "Sore overridden and submitted currentUploadSteate = ${viewModel.uploadState.value.toReadableString()} and viemodeluploadstate = ${viewModel.uploadState.value.toReadableString()}"
+                                )
+                                //viewModel.setUploadState(UploadState.Idle)
                             }
                         } else {
                             Toast.makeText(
                                 context,
-                                "Submitted Score of: ${currentUploadState.score} is invalid",
+                                "Submitted Score of: ${(viewModel.uploadState.value as UploadState.Success).score} is invalid",
                                 Toast.LENGTH_LONG
                             ).show()
                         }
-                    }
-                    if (currentUploadState !is UploadState.Uploading) {
-                        takeAndUploadPhoto(
-                            controller = controller,
-                            context = context,
-                            viewModel = viewModel
-                        )
+                    } else if (currentState !is UploadState.Uploading) {
+                        viewModel.dummyGetScore(viewModel, UploadState.Success(77), 77) //TODO remove when live
+//                        takeAndUploadPhoto(
+//                            controller = controller,
+//                            context = context,
+//                            viewModel = viewModel
+//                        )
                     } else {
                         Toast.makeText(
                             context,
