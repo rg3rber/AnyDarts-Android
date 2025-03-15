@@ -26,6 +26,13 @@ val displayFontFamily = FontFamily(
     )
 )
 
+val buttonFontFamily = FontFamily(
+    Font(
+        googleFont = GoogleFont("Anta"),
+        fontProvider = provider,
+    )
+)
+
 // Default Material 3 typography values
 val baseline = Typography()
 
@@ -42,8 +49,8 @@ val AppTypography = Typography(
     bodyLarge = baseline.bodyLarge.copy(fontFamily = bodyFontFamily),
     bodyMedium = baseline.bodyMedium.copy(fontFamily = bodyFontFamily),
     bodySmall = baseline.bodySmall.copy(fontFamily = bodyFontFamily),
-    labelLarge = baseline.labelLarge.copy(fontFamily = bodyFontFamily),
-    labelMedium = baseline.labelMedium.copy(fontFamily = bodyFontFamily),
-    labelSmall = baseline.labelSmall.copy(fontFamily = bodyFontFamily),
+    labelLarge = baseline.labelLarge.copy(fontFamily = buttonFontFamily),
+    labelMedium = baseline.labelMedium.copy(fontFamily = buttonFontFamily),
+    labelSmall = baseline.labelSmall.copy(fontFamily = buttonFontFamily),
 )
 

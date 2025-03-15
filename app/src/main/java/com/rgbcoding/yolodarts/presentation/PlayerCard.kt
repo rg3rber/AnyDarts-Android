@@ -64,7 +64,9 @@ fun PlayerCard(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .clip(RoundedCornerShape(cornerRadius))
+            .padding(horizontal = 8.dp)
+            .clip(shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 16.dp, bottomEnd = 16.dp))
+
     ) {
         Image(
             painter = painterResource(id = R.drawable.yd_bg_3),
@@ -125,42 +127,42 @@ fun PlayerCard(
             Column(modifier = Modifier.fillMaxWidth()) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(
-                        "Score Left:",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
+                        "SCORE LEFT",
+                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
                         color = textColor,
                         modifier = Modifier.padding(start = 16.dp)
                     )
                     Text(
                         player.scoreLeft.value.toString(),
-                        style = MaterialTheme.typography.displayLarge.copy(fontSize = 32.sp),
+                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 32.sp),
                         color = textColor,
                         modifier = Modifier.padding(end = 16.dp)
                     )
                 }
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(
-                        "Last Score:",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
+                        "LAST SCORE",
+                        style = MaterialTheme.typography.labelLarge.copy(fontSize = 12.sp),
                         color = textColor,
                         modifier = Modifier.padding(start = 16.dp)
                     )
                     Text(
                         if (player.throws.value.isEmpty()) "-" else player.throws.value.last().toString(),
-                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 24.sp),
+                        style = MaterialTheme.typography.labelLarge.copy(fontSize = 24.sp),
                         color = textColor,
                         modifier = Modifier.padding(end = 16.dp)
                     )
                 }
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(
-                        "3-Dart Avg.:",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
+                        "3-DART AVG",
+                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
                         color = textColor,
                         modifier = Modifier.padding(start = 16.dp)
                     )
                     Text(
                         if (player.throws.value.isEmpty()) "-" else formatAverage(player),
-                        style = MaterialTheme.typography.headlineMedium.copy(fontSize = 24.sp),
+                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 24.sp),
                         color = textColor,
                         modifier = Modifier.padding(end = 16.dp)
                     )

@@ -287,7 +287,8 @@ fun MainScreen(
                             .fillMaxWidth()
                             .paint(
                                 painterResource(id = R.drawable.yd_bg_square),
-                                contentScale = ContentScale.Crop
+                                contentScale = ContentScale.Crop,
+                                alpha = 0.5f
                             )
                     ) {
                         Column(
@@ -300,7 +301,6 @@ fun MainScreen(
                                 context,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(start = 16.dp, bottom = 16.dp, end = 16.dp, top = 0.dp)
                                     .blur(if (gameState == null) 16.dp else 0.dp)
                             )
                             //first player
