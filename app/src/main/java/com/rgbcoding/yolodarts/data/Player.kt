@@ -41,7 +41,7 @@ data class Player(
     }
 
     fun undoLastThrow(): Int? {
-        val lastThrow = _throws.value.lastOrNull() ?: return null
+        val lastThrow = _throws.value.lastOrNull() ?: return null // shouldnt ever happen lol
         _throws.value = _throws.value.dropLast(1)
         _scoreLeft.value += lastThrow
         return lastThrow

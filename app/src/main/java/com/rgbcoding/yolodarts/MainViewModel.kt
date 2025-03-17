@@ -67,6 +67,9 @@ class MainViewModel : ViewModel() {
     private val _gameState = MutableStateFlow<Game?>(null)
     val gameState: StateFlow<Game?> = _gameState.asStateFlow()
 
+    private val _currentPlayerIndex = MutableStateFlow(0)
+    val currentPlayerIndex: StateFlow<Int> = _currentPlayerIndex.asStateFlow()
+
     // lifecycle functions
 
     init {
@@ -128,7 +131,7 @@ class MainViewModel : ViewModel() {
 
         val game = gameState.value ?: return AlertCode.NO_GAME
 
-        val currentPlayer = game.players[game.currentPlayerIndex.value]
+        val currentPlayer = game.currentPlayer
 
         if (scoreValue > currentPlayer.scoreLeft.value) {
             return AlertCode.OVERSHOT
@@ -140,6 +143,7 @@ class MainViewModel : ViewModel() {
         SpeechService.speakText(pendingScoreOverride)
 
         pendingScoreOverride = ""
+
         Log.d("Scoring", "Viewmodel: SubmitScore is setting uploadstate to idle")
         uploadManager.setUploadState(UploadState.Idle) // after submitting score reset uploadstate
         _lastScore.value = null // TODO also reset lastscore because it is actually the total score
@@ -148,7 +152,8 @@ class MainViewModel : ViewModel() {
             return AlertCode.GAME_OVER
         } else {
             game.nextTurn()
-            _gameState.value = Game(game.players.map { it.copy() })
+            _currentPlayerIndex.value = game.currentPlayerIndex.value // trigger recomposition
+            //_gameState.value = _gameState.value // option 2: force recomposition not working only after clicking on textfield again...
             return AlertCode.VALID_SCORE
         }
     }
@@ -166,58 +171,28 @@ class MainViewModel : ViewModel() {
     }
 
     fun goBack() {
-        Log.d("undo", "going back with gamestate: ${_gameState.value}")
         val game = _gameState.value ?: return
 
-
-        val currentPlayerIndex = game.currentPlayerIndex.value
-        val currentPlayer = game.players[currentPlayerIndex]
-        if (currentPlayer.throws.value.isEmpty() && currentPlayerIndex == 0) return // only undo if there is something to undo
-
-        val updatedGame = Game(game.players.toList())
-
-        while (updatedGame.currentPlayerIndex.value != currentPlayerIndex) {
-            updatedGame.nextTurn()
+        // One player case - directly undo throws
+        if (game.players.size == 1) {
+            val undoneThrow = game.currentPlayer.undoLastThrow()
+            Log.d("undo", "Single player mode - Undone throw: $undoneThrow")
+            _lastScore.value = undoneThrow // put the undone throw into the textfield
+            _currentPlayerIndex.value = game.currentPlayerIndex.value // force recomposition
+            return
         }
 
-        updatedGame.previousTurn() // set player turn back
-
-        val undoneThrow = currentPlayer.undoLastThrow()
-        Log.d("undo", "Undone throw: $undoneThrow")
-        undoneThrow?.let {
-            //_lastScore.value = undoneThrow // put the "dropped" throw into score textfield value TODO not needed?
+        if (game.currentPlayer.throws.value.isEmpty() && game.currentPlayerIndex.value == 0) {
+            _lastScore.value = null
+            return //if no throws logged and its the first player stop going back
         }
-        _gameState.value = updatedGame
+        game.previousTurn()
+        val undoneThrow = game.currentPlayer.undoLastThrow()
+        _lastScore.value = undoneThrow // put the undone throw into the textfield
+        Log.d("undo", "Second undo press - undone throw: $undoneThrow")
 
-    }
-
-    fun goBackNew() {
-        val game = _gameState.value ?: return
-
-        val currentPlayer = game.players[game.currentPlayerIndex.value]
-        if (currentPlayer.throws.value.isEmpty() && game.currentPlayerIndex.value == 0) return
-
-        // Force a state update with a new reference
-        _gameState.update { currentGame ->
-            currentGame?.let {
-                // Create a copy of the game
-                val updatedGame = Game(it.players.toList())
-
-                // Set the current player index
-                while (updatedGame.currentPlayerIndex.value != it.currentPlayerIndex.value) {
-                    updatedGame.nextTurn()
-                }
-
-                // Now perform the actions
-                updatedGame.previousTurn()
-                val currentPlayerAfterPrevious = updatedGame.players[updatedGame.currentPlayerIndex.value]
-                currentPlayerAfterPrevious.undoLastThrow()?.let { score ->
-                    _lastScore.value = score
-                }
-
-                updatedGame
-            }
-        }
+        // Force recomposition
+        _currentPlayerIndex.value = game.currentPlayerIndex.value
     }
 
     fun endGame() {

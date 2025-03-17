@@ -10,6 +10,7 @@ data class Game(
 ) {
     private val _currentPlayerIndex = MutableStateFlow(0)
     val currentPlayerIndex: StateFlow<Int> = _currentPlayerIndex.asStateFlow()
+    val currentPlayer: Player get() = players[currentPlayerIndex.value]
 
     fun nextTurn() {
         if (players.size > 1) {

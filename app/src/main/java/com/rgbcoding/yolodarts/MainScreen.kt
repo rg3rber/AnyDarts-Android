@@ -10,6 +10,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -92,6 +93,7 @@ fun MainScreen(
 
     //game logic
     val gameState by viewModel.gameState.collectAsState()
+    val currentPlayerIndex by viewModel.currentPlayerIndex.collectAsState()
 
     // navigation drawer as a simple Settings Menu
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -303,14 +305,15 @@ fun MainScreen(
                                 context,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .blur(if (gameState == null) 16.dp else 0.dp)
+                                    .blur(if (gameState == null) 8.dp else 0.dp)
                             )
                             //first player
-                            gameState?.let { state ->
-                                val currentPlayer = state.players[state.currentPlayerIndex.value]
+                            gameState?.let { game ->
+                                val currentPlayer = game.players[game.currentPlayerIndex.value]
                                 key(currentPlayer.id) {
                                     ExtensivePlayerCard(
                                         player = currentPlayer,
+                                        isItsTurn = true,
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .weight(1f)
@@ -320,11 +323,13 @@ fun MainScreen(
                             Row( // all the other players
                                 modifier = Modifier
                                     .fillMaxHeight()
-                                    .weight(1f)
+                                    .padding(horizontal = 8.dp)
+                                    .weight(1f),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                gameState?.let { it ->
-                                    it.players.forEachIndexed { index, player ->
-                                        if (index != gameState!!.currentPlayerIndex.value) {
+                                gameState?.let { game ->
+                                    game.players.forEachIndexed { index, player ->
+                                        if (index != currentPlayerIndex) {
                                             key(player.id) {
                                                 if (playerCount.toInt() != 2) {
                                                     PlayerCard(
@@ -335,7 +340,8 @@ fun MainScreen(
                                                     )
                                                 } else {
                                                     ExtensivePlayerCard(
-                                                        player = player, backgroundColor = MaterialTheme.colorScheme.surfaceContainer, topCornerRadius = 16.dp,
+                                                        player = player,
+                                                        isItsTurn = false,
                                                         modifier = Modifier
                                                             .fillMaxWidth()
                                                             .weight(1f)

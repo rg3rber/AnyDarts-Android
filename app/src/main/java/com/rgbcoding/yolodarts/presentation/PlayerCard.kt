@@ -6,10 +6,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -61,7 +63,6 @@ fun PlayerCard(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 8.dp)
             .clip(shape = RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius, bottomStart = cornerRadius, bottomEnd = cornerRadius))
     ) {
         Image(
@@ -93,7 +94,7 @@ fun PlayerCard(
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
@@ -105,12 +106,12 @@ fun PlayerCard(
                 },
                 textStyle = MaterialTheme.typography.headlineMedium.copy(
                     color = textColor,
-                    textAlign = TextAlign.Center,
+                    textAlign = TextAlign.Start,
                     fontSize = 16.sp
                 ),
                 singleLine = true,
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.width(IntrinsicSize.Min),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(
                     onDone = {

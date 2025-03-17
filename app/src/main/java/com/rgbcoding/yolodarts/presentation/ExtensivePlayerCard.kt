@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -54,8 +53,7 @@ import com.rgbcoding.yolodarts.data.Player
 @Composable
 fun ExtensivePlayerCard(
     player: Player,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceBright,
-    topCornerRadius: Dp = 0.dp,
+    isItsTurn: Boolean,
     modifier: Modifier = Modifier
 ) {
     val playerName by player.name.collectAsState()
@@ -66,7 +64,15 @@ fun ExtensivePlayerCard(
     val editingNameText = remember { mutableStateOf(player.name.value) }
     val focusManager = LocalFocusManager.current
 
+    var backgroundColor = MaterialTheme.colorScheme.surfaceBright
+    var topCornerRadius: Dp = 0.dp
+    var underlineColor = MaterialTheme.colorScheme.tertiary
 
+    if (!isItsTurn) {
+        backgroundColor = MaterialTheme.colorScheme.surfaceContainer
+        topCornerRadius = 16.dp
+        underlineColor = Color.Transparent
+    }
     val textColor = MaterialTheme.colorScheme.onBackground
 
     val cornerRadius = 16.dp
@@ -115,11 +121,11 @@ fun ExtensivePlayerCard(
                 modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween
             ) {
 
-                UnderlinedPlayerName(editingNameText, player, textColor, focusManager)
+                UnderlinedPlayerName(editingNameText, player, textColor, underlineColor, focusManager)
                 Text(
                     playerScoreLeft.toString(),
                     modifier = Modifier
-                        .border(border = BorderStroke(2.dp, color = MaterialTheme.colorScheme.primary), shape = RoundedCornerShape(8.dp))
+                        .border(border = BorderStroke(2.dp, color = underlineColor), shape = RoundedCornerShape(8.dp))
                         .background(color = MaterialTheme.colorScheme.inverseOnSurface.copy(alpha = 0.25f), shape = RoundedCornerShape(8.dp))
                         .padding(8.dp),
                     style = MaterialTheme.typography.titleLarge.copy(fontSize = 34.sp),
@@ -174,6 +180,7 @@ private fun UnderlinedPlayerName(
     editingNameText: MutableState<String>,
     player: Player,
     textColor: Color,
+    underlineColor: Color,
     focusManager: FocusManager
 ) {
     var textFieldWidth by remember { mutableIntStateOf(0) } // Stores the width
@@ -208,12 +215,10 @@ private fun UnderlinedPlayerName(
                 }
             ),
         )
-        val underlineColor = MaterialTheme.colorScheme.tertiary
         Canvas(
             modifier = Modifier
                 .width(with(LocalDensity.current) { textFieldWidth.toDp() }) // Apply captured width as dp
                 .padding(bottom = 2.dp, start = 16.dp)
-                .height(4.dp)
         ) {
             //val textWidth = editingNameText.value.length * 28f
             val startX = 0f //(size.width - textWidth) / 2
@@ -232,11 +237,13 @@ private fun UnderlinedPlayerName(
 @Composable
 fun PreviewExtensivePlayerCard() {
     val player1 = Player("Player 1")
+    val player2 = Player("Player 2")
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            ExtensivePlayerCard(player = player1, modifier = Modifier.weight(1f))
+        Column(modifier = Modifier.fillMaxWidth()) {
+            ExtensivePlayerCard(player = player1, isItsTurn = true, modifier = Modifier.weight(1f))
+            ExtensivePlayerCard(player = player2, isItsTurn = false, modifier = Modifier.weight(1f))
         }
     }
 }
