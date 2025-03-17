@@ -27,6 +27,7 @@ fun GameAlertDialog(
                     AlertCode.INVALID_SCORE -> "Invalid score format."
                     AlertCode.OVERSHOT -> "Overshot"
                     AlertCode.GAME_OVER -> "Congratulations"
+                    AlertCode.NO_GAME -> "No Game"
                     else -> {
                         Log.e("Alerts", "AlertDialog called with unkonw alertCode: $alertCode")
                         "Internal Error"
@@ -40,6 +41,7 @@ fun GameAlertDialog(
                     AlertCode.INVALID_SCORE -> "Only Integers from 0 to 180 are permitted"
                     AlertCode.OVERSHOT -> "You must finish exactly with Score 0 left"
                     AlertCode.GAME_OVER -> "You Won The Game"
+                    AlertCode.NO_GAME -> "No Game Running"
                     else -> {
                         Log.e("Alerts", "AlertDialog called with unkonwn alertCode: $alertCode")
                         "Internal Error"
@@ -75,5 +77,6 @@ enum class AlertCode(code: String) {
     VALID_SCORE("Valid Score"),
     GAME_OVER("Game Over"),
     INVALID_SCORE("Invalid Score"),
-    OVERSHOT("Overshot")
+    OVERSHOT("Overshot"),
+    NO_GAME("No Game Started")
 }

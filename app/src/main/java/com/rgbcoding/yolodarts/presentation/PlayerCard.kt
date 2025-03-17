@@ -17,6 +17,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -40,33 +42,27 @@ import com.rgbcoding.yolodarts.data.Player
 @Composable
 fun PlayerCard(
     player: Player,
-    isItsTurn: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val playerName by player.name.collectAsState()
+    val playerScoreLeft by player.scoreLeft.collectAsState()
+    val playerThrows by player.throws.collectAsState()
+
     val isEditingName = remember { mutableStateOf(false) }
     val editingNameText = remember { mutableStateOf(player.name.value) }
     val focusManager = LocalFocusManager.current
 
-    val backgroundColor = if (isItsTurn) {
-        MaterialTheme.colorScheme.surfaceBright
-    } else {
-        MaterialTheme.colorScheme.surfaceContainer
-    }
-    val textColor = if (isItsTurn) {
-        MaterialTheme.colorScheme.onBackground
-    } else {
-        MaterialTheme.colorScheme.onSurface
-    }
+    val backgroundColor = MaterialTheme.colorScheme.surfaceContainer
+    val textColor = MaterialTheme.colorScheme.onSurface
 
     val cornerRadius = 16.dp
-    val colorAlpha = if (isItsTurn) 0.3f else 0.6f
+    val colorAlpha = 0.6f
 
     Box(
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 8.dp)
-            .clip(shape = RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp, bottomStart = 16.dp, bottomEnd = 16.dp))
-
+            .clip(shape = RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius, bottomStart = cornerRadius, bottomEnd = cornerRadius))
     ) {
         Image(
             painter = painterResource(id = R.drawable.yd_bg_3),
@@ -99,7 +95,7 @@ fun PlayerCard(
                 .fillMaxSize()
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceEvenly
+            verticalArrangement = Arrangement.Top
         ) {
             BasicTextField(
                 value = editingNameText.value,
@@ -110,7 +106,7 @@ fun PlayerCard(
                 textStyle = MaterialTheme.typography.headlineMedium.copy(
                     color = textColor,
                     textAlign = TextAlign.Center,
-                    fontSize = 24.sp
+                    fontSize = 16.sp
                 ),
                 singleLine = true,
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
@@ -123,58 +119,33 @@ fun PlayerCard(
                     }
                 ),
             )
-
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(
-                        "SCORE LEFT",
-                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
-                        color = textColor,
-                        modifier = Modifier.padding(start = 16.dp)
-                    )
-                    Text(
-                        player.scoreLeft.value.toString(),
-                        style = MaterialTheme.typography.titleLarge.copy(fontSize = 32.sp),
-                        color = textColor,
-                        modifier = Modifier.padding(end = 16.dp)
-                    )
-                }
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(
-                        "LAST SCORE",
-                        style = MaterialTheme.typography.labelLarge.copy(fontSize = 12.sp),
-                        color = textColor,
-                        modifier = Modifier.padding(start = 16.dp)
-                    )
-                    Text(
-                        if (player.throws.value.isEmpty()) "-" else player.throws.value.last().toString(),
-                        style = MaterialTheme.typography.labelLarge.copy(fontSize = 24.sp),
-                        color = textColor,
-                        modifier = Modifier.padding(end = 16.dp)
-                    )
-                }
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(
-                        "3-DART AVG",
-                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp),
-                        color = textColor,
-                        modifier = Modifier.padding(start = 16.dp)
-                    )
-                    Text(
-                        if (player.throws.value.isEmpty()) "-" else formatAverage(player),
-                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 24.sp),
-                        color = textColor,
-                        modifier = Modifier.padding(end = 16.dp)
-                    )
-                }
-            }
+            Text(
+                playerScoreLeft.toString(),
+                style = MaterialTheme.typography.titleLarge.copy(fontSize = 24.sp),
+                color = textColor,
+            )
+            Text(
+                if (playerThrows.isEmpty()) "-" else playerThrows.last().toString(),
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
+                color = textColor,
+            )
+            Text(
+                if (playerThrows.isEmpty()) "-" else formatAverage(playerThrows),
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
+                color = textColor,
+            )
+            Text(
+                if (playerThrows.isEmpty()) "0" else (playerThrows.size * 3).toString(),
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 12.sp),
+                color = textColor,
+            )
         }
     }
 }
 
 @SuppressLint("DefaultLocale")
-fun formatAverage(player: Player): String {
-    val average = player.throws.value.average()
+fun formatAverage(playerThrows: List<Int>): String {
+    val average = playerThrows.average()
     return String.format("%.2f", average)
 }
 
@@ -187,8 +158,8 @@ fun PreviewPlayerCard() {
         modifier = Modifier.fillMaxSize()
     ) {
         Row(modifier = Modifier.fillMaxWidth()) {
-            PlayerCard(player1, false, Modifier.weight(1f))
-            PlayerCard(player2, true, Modifier.weight(1f))
+            PlayerCard(player1, Modifier.weight(1f))
+            PlayerCard(player2, Modifier.weight(1f))
         }
     }
 }

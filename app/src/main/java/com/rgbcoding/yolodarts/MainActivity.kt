@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.rgbcoding.yolodarts.services.SpeechService
 import com.rgbcoding.yolodarts.ui.theme.YoloDartsTheme
 
 class MainActivity : ComponentActivity() {
@@ -34,11 +35,18 @@ class MainActivity : ComponentActivity() {
         }
         enableEdgeToEdge()
 
+        SpeechService.initialize(applicationContext)
+
         setContent {
             YoloDartsTheme {
                 MainScreen(modifier = Modifier.fillMaxSize())
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        SpeechService.shutdown()
     }
 
     private fun hasRequiredPermissions(): Boolean {

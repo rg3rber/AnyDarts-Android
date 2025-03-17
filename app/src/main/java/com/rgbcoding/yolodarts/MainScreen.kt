@@ -39,6 +39,7 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -64,6 +65,7 @@ import com.rgbcoding.yolodarts.domain.YoloDartsTitleBar
 import com.rgbcoding.yolodarts.domain.toReadableString
 import com.rgbcoding.yolodarts.presentation.BoardSquare
 import com.rgbcoding.yolodarts.presentation.Crosshair
+import com.rgbcoding.yolodarts.presentation.ExtensivePlayerCard
 import com.rgbcoding.yolodarts.presentation.PlayerCard
 import com.rgbcoding.yolodarts.presentation.ScoreTextField
 import kotlinx.coroutines.launch
@@ -304,14 +306,16 @@ fun MainScreen(
                                     .blur(if (gameState == null) 16.dp else 0.dp)
                             )
                             //first player
-                            gameState?.let {
-                                PlayerCard(
-                                    player = it.currentPlayer,
-                                    isItsTurn = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .weight(1f)
-                                )
+                            gameState?.let { state ->
+                                val currentPlayer = state.players[state.currentPlayerIndex.value]
+                                key(currentPlayer.id) {
+                                    ExtensivePlayerCard(
+                                        player = currentPlayer,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .weight(1f)
+                                    )
+                                }
                             }
                             Row( // all the other players
                                 modifier = Modifier
@@ -321,13 +325,23 @@ fun MainScreen(
                                 gameState?.let { it ->
                                     it.players.forEachIndexed { index, player ->
                                         if (index != gameState!!.currentPlayerIndex.value) {
-                                            PlayerCard(
-                                                player = player,
-                                                isItsTurn = false,
-                                                modifier = Modifier
-                                                    .weight(1f / (playerCount.toInt() - 1))
-                                                    .fillMaxHeight()
-                                            )
+                                            key(player.id) {
+                                                if (playerCount.toInt() != 2) {
+                                                    PlayerCard(
+                                                        player = player,
+                                                        modifier = Modifier
+                                                            .weight(1f / (playerCount.toInt() - 1))
+                                                            .fillMaxHeight()
+                                                    )
+                                                } else {
+                                                    ExtensivePlayerCard(
+                                                        player = player, backgroundColor = MaterialTheme.colorScheme.surfaceContainer, topCornerRadius = 16.dp,
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .weight(1f)
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
                                 }

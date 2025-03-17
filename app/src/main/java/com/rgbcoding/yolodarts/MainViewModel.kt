@@ -17,6 +17,7 @@ import com.rgbcoding.yolodarts.domain.UploadManager
 import com.rgbcoding.yolodarts.domain.UploadState
 import com.rgbcoding.yolodarts.domain.toReadableString
 import com.rgbcoding.yolodarts.presentation.AlertCode
+import com.rgbcoding.yolodarts.services.SpeechService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -125,13 +126,18 @@ class MainViewModel : ViewModel() {
     fun submitScoreOverride(): AlertCode {
         val scoreValue = pendingScoreOverride.toIntOrNull() ?: return AlertCode.INVALID_SCORE// better safe than sorry
 
-        val currentPlayer = gameState.value!!.currentPlayer
+        val game = gameState.value ?: return AlertCode.NO_GAME
+
+        val currentPlayer = game.players[game.currentPlayerIndex.value]
 
         if (scoreValue > currentPlayer.scoreLeft.value) {
             return AlertCode.OVERSHOT
         }
-        currentPlayer.throws.value += scoreValue
-        currentPlayer.scoreLeft.value -= scoreValue
+
+        currentPlayer.recordThrow(scoreValue)
+
+        //speak score:
+        SpeechService.speakText(pendingScoreOverride)
 
         pendingScoreOverride = ""
         Log.d("Scoring", "Viewmodel: SubmitScore is setting uploadstate to idle")
@@ -141,7 +147,8 @@ class MainViewModel : ViewModel() {
         if (currentPlayer.hasWon()) {
             return AlertCode.GAME_OVER
         } else {
-            _gameState.value!!.nextTurn()
+            game.nextTurn()
+            _gameState.value = Game(game.players.map { it.copy() })
             return AlertCode.VALID_SCORE
         }
     }
@@ -159,23 +166,58 @@ class MainViewModel : ViewModel() {
     }
 
     fun goBack() {
+        Log.d("undo", "going back with gamestate: ${_gameState.value}")
+        val game = _gameState.value ?: return
 
-        if (_gameState.value == null) return // return if no game
-        else {
-            val currentPlayer = _gameState.value!!.currentPlayer
-            val currentPlayerIndex = _gameState.value!!.currentPlayerIndex
-            if (currentPlayer.throws.value.isEmpty() && currentPlayerIndex.value == 0) return // only undo if there is something to undo
 
-            _gameState.value!!.previousTurn() // set player turn back
+        val currentPlayerIndex = game.currentPlayerIndex.value
+        val currentPlayer = game.players[currentPlayerIndex]
+        if (currentPlayer.throws.value.isEmpty() && currentPlayerIndex == 0) return // only undo if there is something to undo
 
-            val undoneThrow = currentPlayer.throws.value.lastOrNull()
-            undoneThrow?.let {
-                currentPlayer.throws.value = currentPlayer.throws.value.dropLast(1) // drop last throw
-                currentPlayer.scoreLeft.value += it // reset score left
-                _lastScore.value = undoneThrow // put the "dropped" throw into score textfield value
-            } ?: return
+        val updatedGame = Game(game.players.toList())
+
+        while (updatedGame.currentPlayerIndex.value != currentPlayerIndex) {
+            updatedGame.nextTurn()
         }
 
+        updatedGame.previousTurn() // set player turn back
+
+        val undoneThrow = currentPlayer.undoLastThrow()
+        Log.d("undo", "Undone throw: $undoneThrow")
+        undoneThrow?.let {
+            //_lastScore.value = undoneThrow // put the "dropped" throw into score textfield value TODO not needed?
+        }
+        _gameState.value = updatedGame
+
+    }
+
+    fun goBackNew() {
+        val game = _gameState.value ?: return
+
+        val currentPlayer = game.players[game.currentPlayerIndex.value]
+        if (currentPlayer.throws.value.isEmpty() && game.currentPlayerIndex.value == 0) return
+
+        // Force a state update with a new reference
+        _gameState.update { currentGame ->
+            currentGame?.let {
+                // Create a copy of the game
+                val updatedGame = Game(it.players.toList())
+
+                // Set the current player index
+                while (updatedGame.currentPlayerIndex.value != it.currentPlayerIndex.value) {
+                    updatedGame.nextTurn()
+                }
+
+                // Now perform the actions
+                updatedGame.previousTurn()
+                val currentPlayerAfterPrevious = updatedGame.players[updatedGame.currentPlayerIndex.value]
+                currentPlayerAfterPrevious.undoLastThrow()?.let { score ->
+                    _lastScore.value = score
+                }
+
+                updatedGame
+            }
+        }
     }
 
     fun endGame() {
@@ -183,7 +225,7 @@ class MainViewModel : ViewModel() {
         _gameState.value = null
     }
 
-    // Photo Management
+// Photo Management
 
     fun onTakePhoto(bitmap: Bitmap) {
         _lastPhotos.update { currentPhotos ->

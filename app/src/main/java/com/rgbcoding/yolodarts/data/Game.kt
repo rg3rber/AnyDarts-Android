@@ -1,24 +1,25 @@
 package com.rgbcoding.yolodarts.data
 
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableIntStateOf
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 data class Game(
     val players: List<Player>,
-    var currentPlayerIndex: MutableState<Int> = mutableIntStateOf(0),
     var isGameOver: Boolean = false
 ) {
-    val currentPlayer: Player get() = players[currentPlayerIndex.value]
+    private val _currentPlayerIndex = MutableStateFlow(0)
+    val currentPlayerIndex: StateFlow<Int> = _currentPlayerIndex.asStateFlow()
 
     fun nextTurn() {
         if (players.size > 1) {
-            currentPlayerIndex.value = (currentPlayerIndex.value + 1) % players.size
+            _currentPlayerIndex.value = (currentPlayerIndex.value + 1) % players.size
         }
     }
 
     fun previousTurn() {
         if (players.size > 1) {
-            currentPlayerIndex.value = (currentPlayerIndex.value - 1 + players.size) % players.size
+            _currentPlayerIndex.value = (currentPlayerIndex.value - 1 + players.size) % players.size
         }
     }
 

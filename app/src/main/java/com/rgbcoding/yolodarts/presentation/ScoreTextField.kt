@@ -70,7 +70,7 @@ fun ScoreTextField(
     val focusManager = LocalFocusManager.current
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .height(64.dp)
             .padding(horizontal = 8.dp),
@@ -121,6 +121,7 @@ fun ScoreTextField(
                             viewModel.submitScoreOverride()
                             focusManager.clearFocus()
                         }
+                        isEditing = false
                     }
                 ),
                 isError = isError,
@@ -207,7 +208,7 @@ fun ScoreTextField(
 
         if (openAlertDialog.value) {
             GameAlertDialog(
-                onDismissRequest = { openAlertDialog.value = false },
+                onDismissRequest = { if (alertCode.value == AlertCode.GAME_OVER) viewModel.endGame() else openAlertDialog.value = false },
                 onConfirmation = { openAlertDialog.value = false },
                 dialogTitle = alertCode.toString(),
                 dialogText = "This is an example of an alert dialog with buttons.",
