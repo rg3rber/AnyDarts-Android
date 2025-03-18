@@ -1,5 +1,6 @@
 package com.rgbcoding.yolodarts.presentation
 
+import android.app.Application
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
@@ -16,7 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Redo
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults.buttonColors
@@ -90,7 +91,7 @@ fun ScoreTextField(
                     .background(MaterialTheme.colorScheme.tertiaryContainer),
             ) {
                 Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Redo,
+                    imageVector = Icons.Default.History,
                     contentDescription = "Go Back One Turn",
                     tint = MaterialTheme.colorScheme.onTertiaryContainer
                 )
@@ -223,8 +224,8 @@ fun ScoreTextField(
 @Preview(showBackground = true)
 @Composable
 fun PreviewScoreTextField() {
-    // Create a mock ViewModel
-    val mockViewModel = MainViewModel() // Ensure you have a no-arg constructor or use MockK
+    // Create a mock ViewModel TODO fix this similar to the app bar
+    val mockViewModel = MainViewModel(application = Application()) // Ensure you have a no-arg constructor or use MockK
 
     // Use a dummy context (will not actually work in preview but avoids compilation errors)
     val dummyContext = android.content.ContextWrapper(null)

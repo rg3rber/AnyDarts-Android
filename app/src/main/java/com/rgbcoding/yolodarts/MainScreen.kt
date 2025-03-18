@@ -23,10 +23,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AirplanemodeActive
-import androidx.compose.material.icons.filled.AirplanemodeInactive
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.Dns
 import androidx.compose.material.icons.filled.PersonAdd
-import androidx.compose.material.icons.filled.WifiPassword
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
@@ -61,6 +61,7 @@ import com.rgbcoding.yolodarts.domain.DrawerBody
 import com.rgbcoding.yolodarts.domain.DrawerHeader
 import com.rgbcoding.yolodarts.domain.MenuItem
 import com.rgbcoding.yolodarts.domain.MenuItemType
+import com.rgbcoding.yolodarts.domain.TitleBarUiState
 import com.rgbcoding.yolodarts.domain.UploadState
 import com.rgbcoding.yolodarts.domain.YoloDartsTitleBar
 import com.rgbcoding.yolodarts.domain.toReadableString
@@ -89,6 +90,7 @@ fun MainScreen(
     val serverIp by viewModel.serverIp.collectAsState()
     val playerCount by viewModel.playerCount.collectAsState()
     val uploadState by viewModel.uploadState.collectAsState()
+    val isAutoScoring by viewModel.autoScoringMode.collectAsState()
     val isAutoScoringMode by viewModel.autoScoringMode.collectAsState()
 
     //game logic
@@ -123,7 +125,7 @@ fun MainScreen(
                             text = "IP Address",
                             onValueChange = viewModel::setIp,
                             contentDescription = "Set IP Address",
-                            icon = Icons.Default.WifiPassword
+                            icon = Icons.Default.Dns
                         ),
                         MenuItem(
                             id = "players",
@@ -144,7 +146,7 @@ fun MainScreen(
                             buttonAction = viewModel::toggleAutoScoring,
                             text = if (isAutoScoringMode) "Disable AI Scoring" else "Enable AI Scoring",
                             contentDescription = "Toggle AI Scoring Mode",
-                            icon = if (isAutoScoringMode) Icons.Default.AirplanemodeActive else Icons.Default.AirplanemodeInactive
+                            icon = if (isAutoScoringMode) Icons.Default.Cloud else Icons.Default.CloudOff
                         ),
                     ),
                 )
@@ -167,7 +169,7 @@ fun MainScreen(
                     onGalleryClick = {
                         showPhotos = !showPhotos
                     },
-                    uploadState
+                    uiState = TitleBarUiState(uploadState, isAutoScoring)
                 )
             }
         ) { padding ->

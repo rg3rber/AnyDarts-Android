@@ -6,9 +6,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.CloudQueue
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,8 +35,9 @@ fun YoloDartsTitleBar(
     displayUploadState: () -> Unit,
     onNavigationClick: () -> Unit,
     onGalleryClick: () -> Unit,
-    uploadState: UploadState
+    uiState: TitleBarUiState,
 ) {
+
     TopAppBar(
         modifier = Modifier, title = {
             Row(
@@ -40,7 +45,7 @@ fun YoloDartsTitleBar(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.yolodartsv2_title),
+                    painter = painterResource(id = R.drawable.yolodarts_v2_title),
                     contentDescription = "Title Image",
                     modifier = Modifier.size(140.dp)
                 )
@@ -56,7 +61,7 @@ fun YoloDartsTitleBar(
                     onNavigationClick()
                 }) {
                 Icon(
-                    imageVector = Icons.Default.BarChart,
+                    imageVector = Icons.Default.Settings,
                     contentDescription = "Navigation Drawer",
                     tint = MaterialTheme.colorScheme.onBackground
                 )
@@ -69,9 +74,14 @@ fun YoloDartsTitleBar(
                 }
             ) {
                 Icon(
-                    imageVector = Icons.Default.Wifi,
+                    imageVector = when (uiState.uploadState) {
+                        is UploadState.Success -> Icons.Default.CloudDone
+                        is UploadState.Uploading -> Icons.Default.CloudUpload
+                        is UploadState.Error -> Icons.Default.Cloud
+                        is UploadState.Idle -> if (uiState.isAutoScoring) Icons.Default.CloudQueue else Icons.Default.CloudOff
+                    },
                     contentDescription = "Upload State Icon",
-                    tint = when (uploadState) {
+                    tint = when (uiState.uploadState) {
                         is UploadState.Success -> Color.Green
                         is UploadState.Uploading -> Color.Yellow
                         is UploadState.Error -> MaterialTheme.colorScheme.error
@@ -94,13 +104,22 @@ fun YoloDartsTitleBar(
     )
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
 fun PreviewTitleBar() {
-    Box(
-        modifier = Modifier.fillMaxSize()
+    val mockUiState = TitleBarUiState(
+        uploadState = UploadState.Success(10),
+        isAutoScoring = true
     )
-    {
-        YoloDartsTitleBar({}, {}, {}, UploadState.Success(10))
+
+    MaterialTheme {
+        Box(modifier = Modifier.fillMaxSize()) {
+            YoloDartsTitleBar(
+                displayUploadState = {},
+                onNavigationClick = {},
+                onGalleryClick = {},
+                uiState = mockUiState
+            )
+        }
     }
 }
