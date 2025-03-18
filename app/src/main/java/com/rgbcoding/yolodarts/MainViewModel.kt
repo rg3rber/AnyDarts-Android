@@ -1,5 +1,6 @@
 package com.rgbcoding.yolodarts
 
+import android.app.Application
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
@@ -9,10 +10,11 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.view.LifecycleCameraController
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.rgbcoding.yolodarts.data.Game
 import com.rgbcoding.yolodarts.data.Player
+import com.rgbcoding.yolodarts.data.PreferencesManager
 import com.rgbcoding.yolodarts.domain.UploadManager
 import com.rgbcoding.yolodarts.domain.UploadState
 import com.rgbcoding.yolodarts.domain.toReadableString
@@ -31,7 +33,9 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.TimeUnit
 
-class MainViewModel : ViewModel() {
+class MainViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val preferencesManager = PreferencesManager(application.applicationContext)
 
     // attributes
 
@@ -47,10 +51,10 @@ class MainViewModel : ViewModel() {
     private val _lastPhotos = MutableStateFlow<List<Bitmap>>(emptyList())
     val lastPhotos = _lastPhotos.asStateFlow()
 
-    private val _serverIp = MutableStateFlow("192.168.178.111")
+    private val _serverIp = MutableStateFlow(preferencesManager.getServerIp())
     val serverIp: StateFlow<String> = _serverIp.asStateFlow()
 
-    private val _playerCount = MutableStateFlow("1")
+    private val _playerCount = MutableStateFlow(preferencesManager.getPlayerCount())
     val playerCount: StateFlow<String> = _playerCount.asStateFlow()
 
     private val _lastScore = MutableStateFlow<Int?>(null)
@@ -61,7 +65,7 @@ class MainViewModel : ViewModel() {
 
     private var pendingScoreOverride = ""
 
-    private var _autoScoringMode = MutableStateFlow<Boolean>(true)
+    private var _autoScoringMode = MutableStateFlow(preferencesManager.getAutoScoringMode())
     val autoScoringMode = _autoScoringMode.asStateFlow()
 
     private val _gameState = MutableStateFlow<Game?>(null)
@@ -99,21 +103,23 @@ class MainViewModel : ViewModel() {
 
     fun setIp(ip: String) {
         _serverIp.value = ip
+        preferencesManager.saveServerIp(ip)
     }
 
     fun updatePlayers(playerCount: String) {
         _playerCount.value = playerCount
+        preferencesManager.savePlayerCount(playerCount)
     }
 
     fun toggleAutoScoring() {
         _autoScoringMode.value = !(_autoScoringMode.value)
+        preferencesManager.saveAutoScoringMode(_autoScoringMode.value)
     }
 
     fun setUploadState(newState: UploadState) {
         Log.d("Scoring", "ViewModel is trying to setuploadstate to $newState")
         uploadManager.setUploadState(newState)
     }
-
 
     fun overrideScore(newScore: String): Boolean {
         Log.d("Scoring", "trying to override score with: $newScore")
@@ -137,7 +143,12 @@ class MainViewModel : ViewModel() {
             return AlertCode.OVERSHOT
         }
 
-        currentPlayer.recordThrow(scoreValue)
+        val recordedThrowAlert = currentPlayer.recordThrow(scoreValue)
+        //TODO yeye satate stuff staoshidoddiod
+//        when (recordedThrowAlert) { this
+//            AlertCode.INVALID_SCORE ->
+//                AlertCode.OVERSHOT -> return AlertCode.OVERSHOT
+//        }
 
         //speak score:
         SpeechService.speakText(pendingScoreOverride)
