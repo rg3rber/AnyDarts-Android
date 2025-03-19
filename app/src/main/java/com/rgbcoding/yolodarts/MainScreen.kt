@@ -317,7 +317,7 @@ fun MainScreen(
                             .paint(
                                 painterResource(id = R.drawable.yd_bg_square),
                                 contentScale = ContentScale.Crop,
-                                alpha = 0.5f
+                                //alpha = 0.5f there is a slight area of the bottom half background image and the camera preview
                             )
                     ) {
                         Column(
