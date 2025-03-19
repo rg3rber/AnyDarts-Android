@@ -86,6 +86,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _lastScore.update {
                     newScore
                 }
+                SpeechService.speakText(newScore.toString())
             }
         }
     }
