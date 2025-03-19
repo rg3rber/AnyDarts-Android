@@ -222,7 +222,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     //game logic:
 
     fun startNewGame() {
-        val playerNames = generatePlayerNames(playerCount.value.toInt())
+        val playerNames = playerCount.value.toIntOrNull()?.let { count ->
+            generatePlayerNames(count)
+        } ?: run {
+            updatePlayers("1")
+            generatePlayerNames(1)
+        }
         val players = playerNames.map { name -> Player(name) }
         _gameState.value = Game(players)
     }

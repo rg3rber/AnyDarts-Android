@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.paint
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -54,7 +55,8 @@ import com.rgbcoding.yolodarts.data.Player
 fun ExtensivePlayerCard(
     player: Player,
     isItsTurn: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showBull: Boolean = false
 ) {
     val playerName by player.name.collectAsState()
     val playerScoreLeft by player.scoreLeft.collectAsState()
@@ -171,7 +173,19 @@ fun ExtensivePlayerCard(
                     color = textColor,
                 )
             }
+            if (showBull) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .paint(
+                            painterResource(id = R.drawable.blue_bull_crop),
+                            contentScale = ContentScale.None,
+                            alpha = 0.7f
+                        )
+                )
+            }
         }
+
     }
 }
 
@@ -242,7 +256,7 @@ fun PreviewExtensivePlayerCard() {
         modifier = Modifier.fillMaxSize()
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            ExtensivePlayerCard(player = player1, isItsTurn = true, modifier = Modifier.weight(1f))
+            ExtensivePlayerCard(player = player1, isItsTurn = true, modifier = Modifier.weight(1f), showBull = true)
             ExtensivePlayerCard(player = player2, isItsTurn = false, modifier = Modifier.weight(1f))
         }
     }

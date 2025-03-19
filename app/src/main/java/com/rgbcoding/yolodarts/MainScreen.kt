@@ -12,12 +12,14 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,6 +44,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -59,6 +62,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.rgbcoding.yolodarts.domain.DrawerBody
@@ -97,6 +101,7 @@ fun MainScreen(
     val isAutoScoring by viewModel.autoScoringMode.collectAsState()
     val isAutoScoringMode by viewModel.autoScoringMode.collectAsState()
     val isDebugMode by viewModel.isDebugMode.collectAsState()
+
 
     //game logic
     val gameState by viewModel.gameState.collectAsState()
@@ -214,7 +219,7 @@ fun MainScreen(
                             .fillMaxWidth()
                             .animateContentSize() // Animate the size change
                     ) {
-                        if (cameraWeight > 0f) {
+                        if (cameraWeight == 1f) {
                             CameraPreview(
                                 controller = controller,
                                 modifier = Modifier
@@ -310,67 +315,89 @@ fun MainScreen(
                             }
                         }
                     }
-                    Box(
+                    BoxWithConstraints(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth()
                             .paint(
                                 painterResource(id = R.drawable.yd_bg_square),
                                 contentScale = ContentScale.Crop,
-                                //alpha = 0.5f there is a slight area of the bottom half background image and the camera preview
                             )
                     ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize()
-                        ) {
-                            ScoreTextField(
-                                viewModel,
-                                isAutoScoringMode,
-                                controller,
-                                context,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .blur(if (gameState == null) 8.dp else 0.dp)
-                            )
-                            //first player
-                            gameState?.let { game ->
-                                val currentPlayer = game.players[game.currentPlayerIndex.value]
-                                key(currentPlayer.id) {
-                                    ExtensivePlayerCard(
-                                        player = currentPlayer,
-                                        isItsTurn = true,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .weight(1f)
-                                    )
-                                }
+                        var lockedHalfHeight by remember { mutableStateOf<Dp?>(null) }
+
+                        // Calculate only once
+                        LaunchedEffect(lockedHalfHeight) {
+                            if (lockedHalfHeight == null) {
+                                val totalHeight = maxHeight
+                                val remainingHeight = totalHeight - 64.dp
+                                lockedHalfHeight = remainingHeight / 2
                             }
-                            Row( // all the other players
-                                modifier = Modifier
-                                    .fillMaxHeight()
-                                    .padding(horizontal = 8.dp)
-                                    .weight(1f),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        }
+                        lockedHalfHeight?.let { halfHeight ->
+                            Column(
+                                modifier = Modifier.fillMaxSize()
                             ) {
+                                ScoreTextField(
+                                    viewModel,
+                                    isAutoScoringMode,
+                                    controller,
+                                    context,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .blur(if (gameState == null) 8.dp else 0.dp)
+                                )
+                                //first player
+                                val singlePlayerMode = gameState?.players?.size == 1
                                 gameState?.let { game ->
-                                    game.players.forEachIndexed { index, player ->
-                                        if (index != currentPlayerIndex) {
-                                            key(player.id) {
-                                                if (playerCount.toInt() != 2) {
-                                                    PlayerCard(
-                                                        player = player,
-                                                        modifier = Modifier
-                                                            .weight(1f / (playerCount.toInt() - 1))
-                                                            .fillMaxHeight()
-                                                    )
-                                                } else {
+                                    val currentPlayer = game.players[game.currentPlayerIndex.value]
+                                    key(currentPlayer.id) {
+                                        ExtensivePlayerCard(
+                                            player = currentPlayer,
+                                            isItsTurn = true,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(if (singlePlayerMode) halfHeight * 2 else halfHeight),
+                                            showBull = singlePlayerMode // custom param
+                                            //.height(if (gameState?.players?.size == 1) halfHeight * 2 else halfHeight) // oneplayer = full height
+                                        )
+                                    }
+                                }
+                                if (gameState?.players?.size == 2) {
+                                    gameState?.let { game ->
+                                        game.players.forEachIndexed { index, player ->
+                                            if (index != currentPlayerIndex) {
+                                                key(player.id) {
                                                     ExtensivePlayerCard(
                                                         player = player,
                                                         isItsTurn = false,
                                                         modifier = Modifier
                                                             .fillMaxWidth()
-                                                            .weight(1f)
+                                                            .height(halfHeight)
                                                     )
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    Row( // all the other players
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(halfHeight)
+                                            .padding(horizontal = 8.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        gameState?.let { game ->
+                                            game.players.forEachIndexed { index, player ->
+                                                if (index != currentPlayerIndex) {
+                                                    key(player.id) {
+                                                        PlayerCard(
+                                                            player = player,
+                                                            modifier = Modifier
+                                                                .weight(1f / (playerCount.toInt() - 1))
+                                                                .fillMaxHeight()
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
@@ -378,7 +405,6 @@ fun MainScreen(
                                 }
                             }
                         }
-
                         this@Column.AnimatedVisibility(
                             visible = showPhotos,
                             enter = slideInVertically(initialOffsetY = { it }),
