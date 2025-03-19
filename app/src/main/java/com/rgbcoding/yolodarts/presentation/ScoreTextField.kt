@@ -29,6 +29,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,7 +46,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.rgbcoding.yolodarts.MainViewModel
 import com.rgbcoding.yolodarts.domain.UploadState
-import com.rgbcoding.yolodarts.domain.toReadableString
 import com.rgbcoding.yolodarts.takeAndUploadPhoto
 
 @Composable
@@ -55,21 +56,43 @@ fun ScoreTextField(
     context: Context,
     modifier: Modifier = Modifier
 ) {
-    var isError by remember { mutableStateOf(false) }
-    var isEditing by remember { mutableStateOf(false) }
-    var editingValue by remember { mutableStateOf("") }
-    val lastScore = viewModel.lastScore.collectAsState().value ?: ""
 
     //this does not work: also in general you have too much logic inside Views (composables here the textfield) here you should just observe flows and conditionally
     // display different things or call different functions then the viewmodel does all the logic part...
-    val currentUploadState by viewModel.uploadState.collectAsState()
+    // val currentUploadState by viewModel.uploadState.collectAsState()
 
-    //alerts
+    var textFieldValue by remember { mutableStateOf("") }
+    var isEditing by remember { mutableStateOf(false) }
+
+    // State from ViewModel
+    val lastScore by viewModel.lastScore.collectAsState()
+    val currentUploadState by viewModel.uploadState.collectAsState()
+    val scoreValidationError by viewModel.scoreValidationError.collectAsState()
+
+    // Alerts
     val openAlertDialog = remember { mutableStateOf(false) }
     val alertCode = remember { mutableStateOf<AlertCode?>(null) }
 
-    // remove cursor once done
+    // Focus management
     val focusManager = LocalFocusManager.current
+
+    // Update textField when ViewModel's lastScore changes (if not editing)
+    LaunchedEffect(lastScore) {
+        if (!isEditing) {
+            // If lastScore is null, clear the field
+            textFieldValue = lastScore?.toString() ?: ""
+        }
+    }
+
+    // TODO is this needed?
+    LaunchedEffect(currentUploadState) {
+        if (currentUploadState is UploadState.Success) {
+            val score = (currentUploadState as UploadState.Success).score
+            textFieldValue = score.toString()
+            // Use the new function to update the viewModel
+            viewModel.updateLastScore(score)
+        }
+    }
 
     Card(
         modifier = modifier
@@ -97,13 +120,12 @@ fun ScoreTextField(
                     tint = MaterialTheme.colorScheme.onTertiaryContainer
                 )
             }
-
             TextField(
-                value = if (isEditing) editingValue else lastScore.toString(),
+                value = textFieldValue,
                 onValueChange = { newValue ->
                     isEditing = true
-                    editingValue = newValue
-                    isError = viewModel.overrideScore(newValue)
+                    textFieldValue = newValue
+                    viewModel.validateScoreInTextfield(newValue)
                 },
                 label = {
                     Text(
@@ -119,14 +141,15 @@ fun ScoreTextField(
                 ),
                 keyboardActions = KeyboardActions(
                     onDone = {
-                        if (!isError) {
-                            viewModel.submitScoreOverride()
-                            focusManager.clearFocus()
+                        val submitResult = submitScore(viewModel, textFieldValue, alertCode, openAlertDialog)
+                        if (submitResult == AlertCode.VALID_SCORE) {
+                            textFieldValue = "" // Clear the field after successful submission
                         }
+                        focusManager.clearFocus()
                         isEditing = false
                     }
                 ),
-                isError = isError,
+                isError = scoreValidationError != null,
                 modifier = Modifier
                     .weight(2f)
                     .padding(horizontal = 4.dp),
@@ -146,44 +169,26 @@ fun ScoreTextField(
                     .weight(1f),
                 onClick = {
                     Log.d("Scoring", "Clicked on Get/Submit Button")
+                    // manual mode:
                     if (!isAutoScoringMode) {
-                        val scoreInScoreField = viewModel.lastScore.value
-                        isError = viewModel.overrideScore(scoreInScoreField.toString())
-                        alertCode.value = viewModel.submitScoreOverride()
-                        if (alertCode.value != AlertCode.VALID_SCORE) {
-                            openAlertDialog.value = true
+                        val submitResult = submitScore(viewModel, textFieldValue, alertCode, openAlertDialog)
+                        if (submitResult == AlertCode.VALID_SCORE) {
+                            textFieldValue = "" // Clear the field after successful submission
                         }
-                    } else {
+                        isEditing = false
+                        //focusManager.clearFocus()
+                    } else { // Auto mode:
                         val currentState = viewModel.uploadState.value
                         if (currentState is UploadState.Success) {
-                            //TODO this makes no sense?? if i overrrode the get score my overridden score will be overrriden?
-                            if (!viewModel.overrideScore(viewModel.lastScore.value.toString())) {
-                                //override did not cause an error
-                                alertCode.value = viewModel.submitScoreOverride()
-                                if (alertCode.value != AlertCode.VALID_SCORE) {
-                                    // something with the score went wrong => show dialog
-                                    openAlertDialog.value = true
-                                    //viewModel.setUploadState(UploadState.Idle)
-                                } else {
-                                    // TODO if it worked do nothing?
-                                    Log.d(
-                                        "Scoring",
-                                        "Sore overridden and submitted currentUploadSteate = ${viewModel.uploadState.value.toReadableString()} and viemodeluploadstate = ${viewModel.uploadState.value.toReadableString()}"
-                                    )
-                                    //viewModel.setUploadState(UploadState.Idle)
-                                }
-                            } else {
-                                Toast.makeText(
-                                    context,
-                                    "Submitted Score of: ${(viewModel.uploadState.value as UploadState.Success).score} is invalid",
-                                    Toast.LENGTH_LONG
-                                ).show()
+                            val submitResult = submitScore(viewModel, textFieldValue, alertCode, openAlertDialog)
+                            if (submitResult == AlertCode.VALID_SCORE) {
+                                textFieldValue = "" // Clear the field after successful submission
                             }
+                            isEditing = false
                         } else if (currentState !is UploadState.Uploading) {
                             if (viewModel.isDebugMode.value) {
                                 viewModel.dummyGetScore(viewModel, UploadState.Success(77), 77)
-                            } // simulate get score
-                            else {
+                            } else {
                                 takeAndUploadPhoto(
                                     controller = controller,
                                     context = context,
@@ -193,12 +198,12 @@ fun ScoreTextField(
                         } else {
                             Toast.makeText(
                                 context,
-                                "Waiting for previous upload to finish",
-                                Toast.LENGTH_SHORT
+                                "Submitted Score of: ${(viewModel.uploadState.value as UploadState.Success).score} is invalid",
+                                Toast.LENGTH_LONG
                             ).show()
                         }
                     }
-                    isEditing = false // after submitting reset editing
+                    focusManager.clearFocus() // always clear focus
                 },
                 colors = buttonColors(
                     containerColor = Color.Transparent
@@ -230,6 +235,20 @@ fun ScoreTextField(
             )
         }
     }
+}
+
+private fun submitScore(
+    viewModel: MainViewModel,
+    scoreText: String,
+    alertCode: MutableState<AlertCode?>,
+    openAlertDialog: MutableState<Boolean>
+): AlertCode {
+    val result = viewModel.submitScore(scoreText)
+    alertCode.value = result
+    if (result != AlertCode.VALID_SCORE) {
+        openAlertDialog.value = true
+    }
+    return result
 }
 
 

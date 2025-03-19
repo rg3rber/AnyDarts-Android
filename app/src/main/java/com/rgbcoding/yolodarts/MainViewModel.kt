@@ -60,10 +60,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _lastScore = MutableStateFlow<Int?>(null)
     val lastScore = _lastScore.asStateFlow()
 
+    private val _scoreValidationError = MutableStateFlow<String?>(null)
+    val scoreValidationError = _scoreValidationError.asStateFlow()
+
     private val _currentPhoto = MutableStateFlow<Bitmap?>(null)
     val currentPhoto: StateFlow<Bitmap?> = _currentPhoto
 
     private var pendingScoreOverride = ""
+
+    private var pendingScore: String? = null
 
     private val _autoScoringMode = MutableStateFlow(preferencesManager.getAutoScoringMode())
     val autoScoringMode = _autoScoringMode.asStateFlow()
@@ -111,7 +116,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun updatePlayers(playerCount: String) {
-        if (_gameState.value == null) return
+        if (_gameState.value != null) return
         _playerCount.value = playerCount
         preferencesManager.savePlayerCount(playerCount)
     }
@@ -131,52 +136,87 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         uploadManager.setUploadState(newState)
     }
 
-    fun overrideScore(newScore: String): Boolean {
-        Log.d("Scoring", "trying to override score with: $newScore")
-        val isError = newScore.toIntOrNull() == null || newScore.toInt() < 0 || newScore.toInt() > 180
-        Log.d("Scoring", "newScore lead to isError = $isError")
-        if (!isError) {
-            pendingScoreOverride = newScore
-            _lastScore.value = newScore.toInt() // save the overriden score to lastScore
+    private fun validScore(score: Int?): Boolean {
+        when {
+            score == null -> {
+                return false
+            }
+
+            score < 0 || score > 180 -> {
+                return false
+            }
         }
-        return isError
+        return true
     }
 
-    fun submitScoreOverride(): AlertCode {
-        val scoreValue = pendingScoreOverride.toIntOrNull() ?: return AlertCode.INVALID_SCORE// better safe than sorry
+    fun validateScoreInTextfield(scoreText: String) {
+        val scoreValue = scoreText.toIntOrNull()
+        when {
+            scoreText.isEmpty() -> {
+                _scoreValidationError.value = null
+                pendingScore = null
+            }
 
+            !validScore(scoreValue) -> {
+                _scoreValidationError.value = "Score must be an Integer between 0-180"
+                pendingScore = null
+            }
+
+            else -> {
+                _scoreValidationError.value = null
+                pendingScore = scoreText
+            }
+        }
+    }
+
+    fun submitScore(scoreText: String? = null): AlertCode {
+        val finalScore = scoreText ?: pendingScore
+
+        // Basic validation
+        val scoreValue = finalScore?.toIntOrNull() ?: return AlertCode.INVALID_SCORE
+
+        //validate score again
+        if (!validScore(scoreValue)) return AlertCode.INVALID_SCORE
+
+        // Game validation
         val game = gameState.value ?: return AlertCode.NO_GAME
-
         val currentPlayer = game.currentPlayer
 
+        // Game rules validation
         if (scoreValue > currentPlayer.scoreLeft.value) {
             return AlertCode.OVERSHOT
         }
 
+        // Record the throw
         val recordedThrowAlert = currentPlayer.recordThrow(scoreValue)
-        //TODO yeye satate stuff staoshidoddiod
-//        when (recordedThrowAlert) { this
-//            AlertCode.INVALID_SCORE ->
-//                AlertCode.OVERSHOT -> return AlertCode.OVERSHOT
-//        }
+        if (recordedThrowAlert != AlertCode.VALID_SCORE) {
+            return recordedThrowAlert
+        }
 
-        //speak score:
-        SpeechService.speakText(pendingScoreOverride)
+        // Speak the score
+        SpeechService.speakText(finalScore.toString())
 
-        pendingScoreOverride = ""
+        // Reset states
+        pendingScore = null
+        _lastScore.value = null
+        uploadManager.setUploadState(UploadState.Idle)
 
-        Log.d("Scoring", "Viewmodel: SubmitScore is setting uploadstate to idle")
-        uploadManager.setUploadState(UploadState.Idle) // after submitting score reset uploadstate
-        _lastScore.value = null // TODO also reset lastscore because it is actually the total score
-
+        // Check for game end
         if (currentPlayer.hasWon()) {
             return AlertCode.GAME_OVER
-        } else {
-            game.nextTurn()
-            _currentPlayerIndex.value = game.currentPlayerIndex.value // trigger recomposition
-            //_gameState.value = _gameState.value // option 2: force recomposition not working only after clicking on textfield again...
-            return AlertCode.VALID_SCORE
         }
+
+        // Move to next turn
+        game.nextTurn()
+        _currentPlayerIndex.value = game.currentPlayerIndex.value
+
+        return AlertCode.VALID_SCORE
+    }
+
+    fun updateLastScore(score: Int) {
+        _lastScore.value = score
+        pendingScore = score.toString()
+        _scoreValidationError.value = null
     }
 
     //game logic:
@@ -204,13 +244,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         if (game.currentPlayer.throws.value.isEmpty() && game.currentPlayerIndex.value == 0) {
+            // Reset states
+            pendingScore = null
             _lastScore.value = null
+            uploadManager.setUploadState(UploadState.Idle)
+            Log.d("Undo", "all the way at the start already")
             return //if no throws logged and its the first player stop going back
         }
         game.previousTurn()
         val undoneThrow = game.currentPlayer.undoLastThrow()
         _lastScore.value = undoneThrow // put the undone throw into the textfield
-        Log.d("undo", "Second undo press - undone throw: $undoneThrow")
+        Log.d("undo", "undo press - undone throw: $undoneThrow")
 
         // Force recomposition
         _currentPlayerIndex.value = game.currentPlayerIndex.value

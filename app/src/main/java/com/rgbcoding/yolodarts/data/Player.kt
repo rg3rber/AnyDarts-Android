@@ -1,5 +1,6 @@
 package com.rgbcoding.yolodarts.data
 
+import com.rgbcoding.yolodarts.presentation.AlertCode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,15 +16,6 @@ data class Player(
     val scoreLeft: StateFlow<Int> = _scoreLeft.asStateFlow()
     val throws: StateFlow<List<Int>> = _throws.asStateFlow()
 
-    fun customCopy(
-        id: String = this.id,
-        _name: MutableStateFlow<String> = this._name,
-        _scoreLeft: MutableStateFlow<Int> = this._scoreLeft,
-        _throws: MutableStateFlow<List<Int>> = this._throws
-    ): Player {
-        return Player(id, _name, _scoreLeft, _throws)
-    }
-
     constructor(playerName: String) : this(
         _name = MutableStateFlow(playerName)
     )
@@ -33,11 +25,14 @@ data class Player(
         _name.value = newName
     }
 
-    fun recordThrow(score: Int) {
+    fun recordThrow(score: Int): AlertCode {
         val currentScore = _scoreLeft.value
-        val newScore = maxOf(0, currentScore - score)
+        val newScore = currentScore - score
+        if (newScore == 0) return AlertCode.GAME_OVER
+        if (newScore < 2) return AlertCode.OVERSHOT
         _scoreLeft.value = newScore
         _throws.value += score
+        return AlertCode.VALID_SCORE
     }
 
     fun undoLastThrow(): Int? {
