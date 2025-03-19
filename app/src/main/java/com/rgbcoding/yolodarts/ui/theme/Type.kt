@@ -14,7 +14,7 @@ val provider = GoogleFont.Provider(
 
 val bodyFontFamily = FontFamily(
     Font(
-        googleFont = GoogleFont("Ubuntu Condensed"),
+        googleFont = GoogleFont("Ubuntu"),
         fontProvider = provider,
     )
 )

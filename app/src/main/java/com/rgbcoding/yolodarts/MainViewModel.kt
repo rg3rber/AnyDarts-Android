@@ -65,7 +65,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private var pendingScoreOverride = ""
 
-    private var _autoScoringMode = MutableStateFlow(preferencesManager.getAutoScoringMode())
+    private val _autoScoringMode = MutableStateFlow(preferencesManager.getAutoScoringMode())
     val autoScoringMode = _autoScoringMode.asStateFlow()
 
     private val _gameState = MutableStateFlow<Game?>(null)
@@ -73,6 +73,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _currentPlayerIndex = MutableStateFlow(0)
     val currentPlayerIndex: StateFlow<Int> = _currentPlayerIndex.asStateFlow()
+
+    private val _isDebugMode = MutableStateFlow(preferencesManager.getDebugMode())
+    val isDebugMode = _isDebugMode.asStateFlow()
 
     // lifecycle functions
 
@@ -107,6 +110,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun updatePlayers(playerCount: String) {
+        if (_gameState.value == null) return
         _playerCount.value = playerCount
         preferencesManager.savePlayerCount(playerCount)
     }
@@ -114,6 +118,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleAutoScoring() {
         _autoScoringMode.value = !(_autoScoringMode.value)
         preferencesManager.saveAutoScoringMode(_autoScoringMode.value)
+    }
+
+    fun toggleDebugMode() {
+        _isDebugMode.value = !(_isDebugMode.value)
+        preferencesManager.saveDebugMode(_isDebugMode.value)
     }
 
     fun setUploadState(newState: UploadState) {
@@ -240,8 +249,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             .build()
 
         // Placeholder URL - replace with your actual server address
+
+        val ipRegex = Regex("^\\d{1,3}(\\.\\d{1,3}){3}$")
+
+        val requestUrl = if (ipRegex.matches(serverIp.value.trim())) {
+            "http://${serverIp.value.trim()}:5000/"
+        } else {
+            "https://${serverIp.value.trim()}/"
+        }
         val request = Request.Builder()
-            .url("http://${serverIp.value}:5000/")
+            .url(requestUrl)
             .post(requestBody)
             .build()
 

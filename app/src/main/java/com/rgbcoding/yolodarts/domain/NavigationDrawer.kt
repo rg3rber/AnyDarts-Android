@@ -1,12 +1,11 @@
 package com.rgbcoding.yolodarts.domain
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
@@ -40,7 +39,7 @@ fun DrawerHeader() {
             .padding(vertical = 32.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(text = "Menu", fontSize = 32.sp)
+        Text(text = "Menu", fontSize = 32.sp, style = MaterialTheme.typography.titleLarge)
     }
 }
 
@@ -58,37 +57,44 @@ fun DrawerBody(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start
             ) {
                 Icon(
                     imageVector = item.icon,
                     contentDescription = item.contentDescription
                 )
-                Spacer(modifier = Modifier.width(16.dp))
                 if (item.type == MenuItemType.BUTTON) {
                     Button(
                         modifier = Modifier
-                            .fillMaxWidth(),
+                            .fillMaxWidth()
+                            .padding(start = 32.dp, end = 32.dp),
+
                         onClick = item.buttonAction,
                         colors = buttonColors(
                             containerColor = MaterialTheme.colorScheme.primaryContainer
                         )
                     ) {
+                        //Spacer(modifier = Modifier.width(16.dp))
                         Text(
                             item.text,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
                     }
                 } else {
+
                     TextField(
                         value = item.value,
                         singleLine = true,
                         onValueChange = item.onValueChange,
+                        textStyle = MaterialTheme.typography.bodyLarge,
                         label = {
                             Text(
                                 item.text,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                //fontSize = 12.sp,
+                                style = MaterialTheme.typography.bodySmall
                             )
                         },
                         keyboardOptions = item.keyboardOptions ?: KeyboardOptions.Default,
@@ -96,6 +102,7 @@ fun DrawerBody(
                             onDone = { focusManager.clearFocus() }
                         ),
                         modifier = Modifier
+                            .padding(start = 16.dp)
                             .fillMaxWidth()
                     )
                 }

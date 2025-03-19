@@ -25,8 +25,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.DeveloperBoard
+import androidx.compose.material.icons.filled.DeveloperBoardOff
 import androidx.compose.material.icons.filled.Dns
+import androidx.compose.material.icons.filled.NotStarted
 import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.StopCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DrawerValue
@@ -92,6 +96,7 @@ fun MainScreen(
     val uploadState by viewModel.uploadState.collectAsState()
     val isAutoScoring by viewModel.autoScoringMode.collectAsState()
     val isAutoScoringMode by viewModel.autoScoringMode.collectAsState()
+    val isDebugMode by viewModel.isDebugMode.collectAsState()
 
     //game logic
     val gameState by viewModel.gameState.collectAsState()
@@ -120,6 +125,15 @@ fun MainScreen(
                 DrawerBody(
                     items = listOf(
                         MenuItem(
+                            type = MenuItemType.BUTTON,
+                            id = "Game Control",
+                            value = "Game Control",
+                            buttonAction = if (gameState == null) viewModel::startNewGame else viewModel::endGame,
+                            text = if (gameState == null) "Start Game" else "End Game",
+                            contentDescription = "Game Control",
+                            icon = if (gameState == null) Icons.Default.NotStarted else Icons.Default.StopCircle
+                        ),
+                        MenuItem(
                             id = "ip",
                             value = serverIp,
                             text = "IP Address",
@@ -147,6 +161,15 @@ fun MainScreen(
                             text = if (isAutoScoringMode) "Disable AI Scoring" else "Enable AI Scoring",
                             contentDescription = "Toggle AI Scoring Mode",
                             icon = if (isAutoScoringMode) Icons.Default.Cloud else Icons.Default.CloudOff
+                        ),
+                        MenuItem(
+                            type = MenuItemType.BUTTON,
+                            id = "debug mode",
+                            value = "debug",
+                            buttonAction = viewModel::toggleDebugMode,
+                            text = if (isDebugMode) "Disable Debug Mode" else "Enable Debug Mode",
+                            contentDescription = "Toggle Debug Mode",
+                            icon = if (isDebugMode) Icons.Default.DeveloperBoard else Icons.Default.DeveloperBoardOff
                         ),
                     ),
                 )

@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import com.rgbcoding.yolodarts.MainViewModel
 import com.rgbcoding.yolodarts.domain.UploadState
 import com.rgbcoding.yolodarts.domain.toReadableString
+import com.rgbcoding.yolodarts.takeAndUploadPhoto
 
 @Composable
 fun ScoreTextField(
@@ -179,12 +180,16 @@ fun ScoreTextField(
                                 ).show()
                             }
                         } else if (currentState !is UploadState.Uploading) {
-                            viewModel.dummyGetScore(viewModel, UploadState.Success(77), 77) //TODO remove when live
-//                        takeAndUploadPhoto(
-//                            controller = controller,
-//                            context = context,
-//                            viewModel = viewModel
-//                        )
+                            if (viewModel.isDebugMode.value) {
+                                viewModel.dummyGetScore(viewModel, UploadState.Success(77), 77)
+                            } // simulate get score
+                            else {
+                                takeAndUploadPhoto(
+                                    controller = controller,
+                                    context = context,
+                                    viewModel = viewModel
+                                )
+                            }
                         } else {
                             Toast.makeText(
                                 context,

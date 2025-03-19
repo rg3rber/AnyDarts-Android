@@ -90,7 +90,7 @@ class UploadManager(
                             }
                         } else {
                             _uploadState.value = UploadState.Error(
-                                "Upload failed: ${response.code}"
+                                "Upload failed. Response code: ${response.code} and message: ${response.message}"
                             )
                         }
                     }
