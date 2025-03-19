@@ -12,7 +12,7 @@ class PreferencesManager(private val context: Context) {
         private const val KEY_PLAYER_COUNT = "player_count"
         private const val KEY_AUTO_SCORING_MODE = "auto_scoring_mode"
         private const val KEY_DEBUG_MODE = "debug_mode"
-        private const val DEFAULT_IP = "192.168.178.111"
+        private const val DEFAULT_IP = "yolodarts.pythonanywhere.com"
         private const val DEFAULT_PLAYER_COUNT = "1"
         private const val DEFAULT_AUTO_SCORING_MODE = true
         private const val DEFAULT_DEBUG_MODE = false
