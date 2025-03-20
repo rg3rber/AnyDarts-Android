@@ -17,6 +17,7 @@ fun CameraPreview(
             PreviewView(context).apply {
                 this.controller = controller
                 controller.bindToLifecycle(lifecycleOwner)
+                controller.setPinchToZoomEnabled(false) // prevent zooming
                 // Set to PERFORMANCE mode to avoid scaling
                 implementationMode = PreviewView.ImplementationMode.PERFORMANCE
                 scaleType = PreviewView.ScaleType.FILL_CENTER
