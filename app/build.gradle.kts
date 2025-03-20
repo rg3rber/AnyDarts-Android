@@ -27,6 +27,19 @@ android {
             )
         }
     }
+
+    flavorDimensions += "version"
+    productFlavors {
+        create("topScorefield") {
+            dimension = "version"
+            applicationIdSuffix = ".top"
+        }
+        create("bottomScorefield") {
+            dimension = "version"
+            applicationIdSuffix = ".bottom"
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
