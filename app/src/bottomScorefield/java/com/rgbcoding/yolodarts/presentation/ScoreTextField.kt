@@ -99,7 +99,7 @@ fun ScoreTextField(
             .fillMaxWidth()
             .height(64.dp)
             .padding(horizontal = 8.dp),
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 0.dp, bottomEnd = 0.dp), // Rounded only at the top
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 16.dp), // Rounded only at the top
         elevation = CardDefaults.cardElevation(8.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
@@ -276,3 +276,4 @@ fun PreviewScoreTextField() {
         )
     }
 }
+

@@ -83,7 +83,7 @@ fun ExtensivePlayerCard(
     Box(
         modifier = modifier
             .padding(horizontal = 8.dp)
-            .clip(shape = RoundedCornerShape(topStart = topCornerRadius, topEnd = topCornerRadius, bottomStart = cornerRadius, bottomEnd = cornerRadius))
+            .clip(shape = RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius, bottomStart = cornerRadius, bottomEnd = cornerRadius))
 
     ) {
         Image(
