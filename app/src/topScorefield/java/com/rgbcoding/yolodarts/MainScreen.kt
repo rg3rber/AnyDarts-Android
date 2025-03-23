@@ -279,11 +279,11 @@ fun MainScreen(
                                     is UploadState.Error -> {
                                         Box(
                                             modifier = Modifier
-                                                .fillMaxWidth()
+                                                .fillMaxWidth(0.6f)
                                                 .align(Alignment.TopCenter)
                                         ) {
                                             Text(
-                                                "Error: ${(uploadState as UploadState.Error).message}",
+                                                uploadState.toReadableString(),
                                                 modifier = Modifier
                                                     .align(Alignment.Center)
                                                     .padding(16.dp),

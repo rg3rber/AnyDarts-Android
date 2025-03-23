@@ -11,7 +11,9 @@ import kotlinx.coroutines.sync.withLock
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
+import java.net.SocketTimeoutException
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.TimeUnit
 
 // Sealed class to represent different upload states
 sealed class UploadState {
@@ -77,34 +79,58 @@ class UploadManager(
 
                 try {
                     Log.d("uploadPhoto", "Trying to call request with ip: ${request.url}")
-                    client.newCall(request).execute().use { response ->
+                    val timeoutClient = client.newBuilder()
+                        .callTimeout(15, TimeUnit.SECONDS)
+                        .build()
+
+                    timeoutClient.newCall(request).execute().use { response ->
                         val responseBody = response.body?.string()
 
                         if (response.isSuccessful && responseBody != null) {
                             try {
-                                val score = responseBody.toIntOrNull() ?: -1
-                                _uploadState.value = UploadState.Success(score)
-                                scoreListeners.forEach { it(score) }
+                                val score = responseBody.toIntOrNull()
+                                if (score == null) {
+                                    _uploadState.value = UploadState.Error("Failed to detect Board")
+                                } else {
+                                    _uploadState.value = UploadState.Success(score)
+                                    scoreListeners.forEach { it(score) }
+                                }
                             } catch (e: Exception) {
                                 _uploadState.value = UploadState.Error("Error processing score")
                             }
                         } else {
-                            _uploadState.value = UploadState.Error(
-                                "Upload failed. Response code: ${response.code} and message: ${response.message}"
-                            )
+                            when (response.code) {
+                                500 -> _uploadState.value = UploadState.Error(
+                                    "Could not process uploaded image. Make sure the board is clearly visible"
+                                )
+
+                                else -> _uploadState.value = UploadState.Error(
+                                    "Upload failed. Check your Connection and try again"
+                                )
+                            }
+                            Log.e("Upload", "Upload failed. Response code: ${response.code} and message: ${response.message}")
                         }
                     }
                 } catch (e: IOException) {
                     Log.e("uploadPhoto", "Caught Error uploading photo: ${e.message}")
                     _uploadState.value = UploadState.Error(e.localizedMessage ?: "Unknown error")
+                } catch (e: SocketTimeoutException) {
+                    Log.e("uploadPhoto", "Request timed out: ${e.message}")
+                    _uploadState.value = UploadState.Error("Request timed out. Please try again.")
+                } catch (e: Exception) {
+                    Log.e("uploadPhoto", "Unexpected error: ${e.message}")
+                    _uploadState.value = UploadState.Error("An unexpected error occurred")
                 }
             }
             // queue is empty
             mutex.withLock {
                 isProcessing = false
                 Log.d("UploadManager:", "emptied Queue and uploadState is ${_uploadState.value}")
-                //TODO handle states correctly. for now do nothing => the code above sets the state either to error or success
-                // if (_uploadState.value !is UploadState.Error) _uploadState.value = UploadState.Idle
+
+                // TODO idk if this is correct? Safety net: If we somehow still have Uploading state when queue is empty, reset to Idle
+                if (_uploadState.value is UploadState.Uploading) {
+                    _uploadState.value = UploadState.Idle
+                }
             }
         }
     }

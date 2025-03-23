@@ -198,8 +198,8 @@ fun ScoreTextField(
                         } else {
                             Toast.makeText(
                                 context,
-                                "Submitted Score of: ${(viewModel.uploadState.value as UploadState.Success).score} is invalid",
-                                Toast.LENGTH_LONG
+                                "Waiting for previous upload to finish",
+                                Toast.LENGTH_SHORT
                             ).show()
                         }
                     }
