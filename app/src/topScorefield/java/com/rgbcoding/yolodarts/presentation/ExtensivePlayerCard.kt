@@ -67,12 +67,12 @@ fun ExtensivePlayerCard(
     val editingNameText = remember { mutableStateOf(player.name.value) }
     val focusManager = LocalFocusManager.current
 
-    var backgroundColor = MaterialTheme.colorScheme.surfaceBright
+    var backgroundColor = MaterialTheme.colorScheme.surfaceContainer
     var topCornerRadius: Dp = 0.dp
     var underlineColor = MaterialTheme.colorScheme.tertiary
 
     if (!isItsTurn) {
-        backgroundColor = MaterialTheme.colorScheme.surfaceContainer
+        backgroundColor = MaterialTheme.colorScheme.surfaceBright
         topCornerRadius = 16.dp
         underlineColor = Color.Transparent
     }
