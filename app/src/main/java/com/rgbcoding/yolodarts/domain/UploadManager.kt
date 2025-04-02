@@ -80,7 +80,7 @@ class UploadManager(
                 try {
                     Log.d("uploadPhoto", "Trying to call request with ip: ${request.url}")
                     val timeoutClient = client.newBuilder()
-                        .callTimeout(15, TimeUnit.SECONDS)
+                        .callTimeout(20, TimeUnit.SECONDS)
                         .build()
 
                     timeoutClient.newCall(request).execute().use { response ->
