@@ -45,7 +45,7 @@ fun YoloDartsTitleBar(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.yolodarts_v2_title),
+                    painter = painterResource(id = R.drawable.anydarts_logo),
                     contentDescription = "Title Image",
                     modifier = Modifier.size(140.dp)
                 )
