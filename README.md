@@ -1,9 +1,4 @@
-
-![ic_bull_v3](https://github.com/user-attachments/assets/35519a8b-85b8-4021-bfed-f330597bf85a)
-<img src="https://github.com/user-attachments/assets/35519a8b-85b8-4021-bfed-f330597bf85a" alt="Description" width="300"/>
-
-
-# Android App accompanying AnyDarts Project
+# Android App accompanying AnyDarts Project <img src="https://github.com/user-attachments/assets/35519a8b-85b8-4021-bfed-f330597bf85a" alt="Description" width="100"/>
 
 - [Link to the AnyDarts Project repository](https://github.com/rg3rber/AnyDarts)
 - To install the app securely open the repo in Android Studio and run the app on the device to install it on.
