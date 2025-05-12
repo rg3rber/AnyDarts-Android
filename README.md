@@ -1,4 +1,6 @@
-# Android App accompanying HoloDarts Project
+# Android App accompanying AnyDarts Project
+
+[Link to the AnyDarts Project repository](https://github.com/rg3rber/AnyDarts)
 
 ## Issues
 
