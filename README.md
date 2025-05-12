@@ -18,3 +18,12 @@
 - [x] Make Scores visible when entering score
 - [x] Beautify UI
 - [x] Redesign score entering and camera collapsing: dont stretch the playercard height
+      
+
+# The App UI with one up to four players
+
+![anydarts-players](https://github.com/user-attachments/assets/f8d51147-66aa-4a8f-bb8f-dc3b1e212896)
+
+# The app's architecture as a class diagram
+
+![anydarts-android-class-diagram](https://github.com/user-attachments/assets/2e7767fc-57c4-4a6d-812d-cd89e6637d43)
