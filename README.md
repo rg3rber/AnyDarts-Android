@@ -1,3 +1,6 @@
+
+![ic_bull_v3](https://github.com/user-attachments/assets/35519a8b-85b8-4021-bfed-f330597bf85a)
+
 # Android App accompanying AnyDarts Project
 
 - [Link to the AnyDarts Project repository](https://github.com/rg3rber/AnyDarts)
