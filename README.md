@@ -1,7 +1,8 @@
 # Android App accompanying AnyDarts Project
 
-[Link to the AnyDarts Project repository](https://github.com/rg3rber/AnyDarts)
-
+- [Link to the AnyDarts Project repository](https://github.com/rg3rber/AnyDarts)
+- To install the app securely open the repo in Android Studio and run the app on the device to install it on.
+- Otherwise (not recommended), downlad the APK from AnyDarts-Android-APK.zip on an Android Device and install the pre built APK. *Disclaimer*: Download and installation of the APK file (AnyDarts-Android-APK.zip) is done at your own risk. The APK is unsigned and may pose security risks. By downloading or installing it, you acknowledge that the software is provided "as is" without any warranties, and I disclaim all liability for any harm, loss, or damages resulting from its use.
 ## Issues
 
 - [x] host inference on pythonanywhere
