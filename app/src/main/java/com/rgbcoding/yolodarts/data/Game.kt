@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.asStateFlow
 
 data class Game(
     val players: List<Player>,
-    var isGameOver: Boolean = false
 ) {
     private val _currentPlayerIndex = MutableStateFlow(0)
     val currentPlayerIndex: StateFlow<Int> = _currentPlayerIndex.asStateFlow()
