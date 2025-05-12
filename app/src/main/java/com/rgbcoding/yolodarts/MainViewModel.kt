@@ -63,11 +63,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _scoreValidationError = MutableStateFlow<String?>(null)
     val scoreValidationError = _scoreValidationError.asStateFlow()
 
-    private val _currentPhoto = MutableStateFlow<Bitmap?>(null)
-    val currentPhoto: StateFlow<Bitmap?> = _currentPhoto
-
-    private var pendingScoreOverride = ""
-
     private var pendingScore: String? = null
 
     private val _autoScoringMode = MutableStateFlow(preferencesManager.getAutoScoringMode())
